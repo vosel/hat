@@ -4,3 +4,6 @@
 [submodule "src/external_dependencies/robot"]
 	path = src/external_dependencies/robot
 	url = https://github.com/Robot/robot
+[submodule "src/external_dependencies/Catch"]
+	path = src/external_dependencies/Catch
+	url = https://github.com/philsquared/Catch
