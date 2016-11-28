@@ -1,0 +1,3 @@
+[submodule "src/external_dependencies/tau"]
+	path = src/external_dependencies/tau
+	url = https://github.com/vosel/tau
