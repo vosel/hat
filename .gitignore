@@ -45,3 +45,16 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Visual studio user-specific and generated files and folders
+ipch/
+.vs/
+*.db
+*.opendb
+*.user
+*.sdf
+*.suo
+*.opensdf
+Debug/
+Release/
+x64/
