@@ -1,0 +1,19 @@
+page:simple page
+hk0;hk1;hk2
+hk3;hk4;hk5
+hk6;hk7;selector;
+optionsSelectorPage:selector;selector for options
+subselector;hk0;hk1
+hk2;;hk3
+hk4;;hk5
+hk6;;hk7
+optionsSelectorPage:subselector;subselector for options
+hk0;hk1;hk2
+hk3;hk4;hk5
+hk6;;hk7
+page:page 2
+;
+;hk0;hk1
+;hk2;hk3
+;hk4;hk5
+;hk6;hk7

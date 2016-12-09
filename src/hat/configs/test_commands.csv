@@ -1,0 +1,17 @@
+hotkey_id	hotkey_category	hotkey_note	hotkey_description	ENV4	ENV2	ENV1	ENV0
+hk0	category	hk0_note	hk0_desc		
+hk1	category	hk1_note	hk1_desc				hk1{SPC}keys{SPC}0
+hk2	category	hk2_note	hk2_desc			hk2{SPC}keys{SPC}1	
+hk3	category	hk3_note	hk3_desc			hk3{SPC}keys{SPC}1	hk3{SPC}keys{SPC}0
+hk4	category	hk4_note	hk4_desc		hk4{SPC}keys{SPC}2		
+hk5	category	hk5_note	hk5_desc		hk5{SPC}keys{SPC}2		hk5{SPC}keys{SPC}0
+hk6	category	hk6_note	hk6_desc		hk6{SPC}keys{SPC}2	hk6{SPC}keys{SPC}1	
+hk7	category	hk7_note	hk7_desc		hk7{SPC}keys{SPC}2	hk7{SPC}keys{SPC}1	hk7{SPC}keys{SPC}0
+hk8	category	hk8_note	hk8_desc	hk8{SPC}keys{SPC}3	
+hk9	category	hk9_note	hk9_desc	hk9{SPC}keys{SPC}3			hk9{SPC}keys{SPC}0
+hkA	category	hkA_note	hkA_desc	hkA{SPC}keys{SPC}3		hkA{SPC}keys{SPC}1	
+hkB	category	hkB_note	hkB_desc	hkB{SPC}keys{SPC}3		hkB{SPC}keys{SPC}1	hkB{SPC}keys{SPC}0
+hkC	category	hkC_note	hkC_desc	hkC{SPC}keys{SPC}3	hkC{SPC}keys{SPC}2		
+hkD	category	hkD_note	hkD_desc	hkD{SPC}keys{SPC}3	hkD{SPC}keys{SPC}2		hkD{SPC}keys{SPC}0
+hkE	category	hkE_note	hkE_desc	hkE{SPC}keys{SPC}3	hkE{SPC}keys{SPC}2	hkE{SPC}keys{SPC}1	
+hkF	category	hkF_note	hkF_desc	hkF{SPC}keys{SPC}3	hkF{SPC}keys{SPC}2	hkF{SPC}keys{SPC}1	hkF{SPC}keys{SPC}0
