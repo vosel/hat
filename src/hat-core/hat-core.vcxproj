@@ -18,6 +18,24 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="abstract_engine.cpp" />
+    <ClCompile Include="commands_data_extraction.cpp" />
+    <ClCompile Include="command_id.cpp" />
+    <ClCompile Include="configs_abstraction_layer.cpp" />
+    <ClCompile Include="preprocessed_layout.cpp" />
+    <ClCompile Include="user_defined_layout.cpp" />
+    <ClCompile Include="utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="abstract_engine.hpp" />
+    <ClInclude Include="commands_data_extraction.hpp" />
+    <ClInclude Include="command_id.hpp" />
+    <ClInclude Include="configs_abstraction_layer.hpp" />
+    <ClInclude Include="preprocessed_layout.hpp" />
+    <ClInclude Include="user_defined_layout.hpp" />
+    <ClInclude Include="utils.hpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{90479114-B673-4D7C-A5B2-514D637EC06B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

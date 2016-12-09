@@ -18,6 +18,17 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AbstractEngineTest.cpp" />
+    <ClCompile Include="ConfigsAbstractionLayerTest.cpp" />
+    <ClCompile Include="HotkeysCSV_parsingTest.cpp" />
+    <ClCompile Include="LayoutConfigutaionParsingTest.cpp" />
+    <ClCompile Include="layout_parsing_verificator.cpp" />
+    <ClCompile Include="MainTest.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="layout_parsing_verificator.hpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CF87D95B-402A-4A73-8002-F7A5BA486DDD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

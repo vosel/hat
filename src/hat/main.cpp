@@ -1,0 +1,182 @@
+// This source file is part of the 'hat' open source project.
+// Copyright (c) 2016, Yuriy Vosel.
+// Licensed under Boost Software License.
+// See LICENSE.txt for the licence information.
+
+#include <tau/util/basic_events_dispatcher.h>
+#include <tau/util/boost_asio_server.h>
+
+#include "engine.hpp"
+#include <iostream>
+#include <memory>
+
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
+
+namespace hat {
+namespace tool {
+std::string LAYOUT_CONFIG_PATH;
+std::string HOTKEYS_CONFIG_PATH;
+auto STICK_ENV_TO_WINDOW{ false };
+auto KEYSTROKES_DELAY = unsigned int{ 0 };
+
+
+class MyEventsDispatcher : public tau::util::BasicEventsDispatcher
+{
+	std::unique_ptr<Engine> m_engine;
+public:
+	MyEventsDispatcher(
+		tau::communications_handling::OutgiongPacketsGenerator & outgoingGeneratorToUse) :
+		tau::util::BasicEventsDispatcher(outgoingGeneratorToUse)
+	{
+	};
+
+	virtual void packetReceived_requestProcessingError(
+		std::string const & layoutID, std::string const & additionalData) override
+	{
+		std::cout << "Error received from client:\nLayouID: "
+			<< layoutID << "\nError: " << additionalData << "\n";
+	}
+	virtual void packetReceived_buttonClick(
+		tau::common::ElementID const & buttonID) override
+	{
+		switch (m_engine->buttonOnLayoutClicked(buttonID.getValue())) {
+		case hat::core::FeedbackFromButtonClick::RELOAD_CONFIGS:
+			if (!reloadConfigs()) {
+				std::cerr << "Configuration parsing failed. The layout will not be refreshed.\n";
+				break;
+			}
+			refreshLayout();
+			break;
+		case hat::core::FeedbackFromButtonClick::UPDATE_LAYOUT:
+			refreshLayout();
+			break;
+		default: break;
+		}
+	}
+	virtual void onClientConnected(
+		tau::communications_handling::ClientConnectionInfo const & connectionInfo) override
+	{
+		std::cout << "Client connected: remoteAddr: "
+			<< connectionInfo.getRemoteAddrDump()
+			<< ", localAddr : "
+			<< connectionInfo.getLocalAddrDump() << "\n";
+		if (!reloadConfigs()) {
+			std::cerr << "Initial configuration parsing failed. Closing the connection.\n";
+			closeConnection();;
+		}
+	}
+	virtual void packetReceived_clientDeviceInfo(
+		tau::communications_handling::ClientDeviceInfo const & info) override
+	{
+		refreshLayout();
+	}
+	virtual void packetReceived_layoutPageSwitched(tau::common::LayoutPageID const & pageID) override
+	{
+		m_engine->layoutPageSwitched(pageID);
+	}
+private:
+	bool reloadConfigs()
+	{
+		try {
+			m_engine = std::make_unique<Engine>(Engine::create(HOTKEYS_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
+		} catch (std::runtime_error & e) {
+			std::cerr << "Error during reading of the config files:\n" << e.what() << "\n";
+			return false;
+		}
+		return true;
+	}
+	void refreshLayout()
+	{
+		auto currentLayout = m_engine->getCurrentLayoutJson();
+		sendPacket_resetLayout(currentLayout);
+	}
+};
+
+}// namespace tool
+}// namespace hat 
+
+
+int main(int argc, char ** argv)
+{
+	// --------------------------------- Command line parameters parsing --------------------------------- 
+	auto const HELP = "help";
+	auto const PORT = "port";
+	auto const KEYB_DELAY = "keysDelay";
+	auto const HOTKEYS_CFG = "hotkeys";
+	auto const LAYOUT_CFG = "layout";
+	auto const TYPING_SEQ = "typingSequences";
+	auto const STICK_ENV_TO_WIN = "stickEnvToWindow";
+
+	namespace po = boost::program_options;
+	short port = 12345;
+	auto desc = po::options_description{ "Allowed options" };
+	desc.add_options()
+		(HELP, "Output this help message and exit")
+		(PORT, po::value<short>(), "Set the server listen port")
+		(KEYB_DELAY, po::value<unsigned int>(), "delay interval between simulated keystrokes in milliseconds (default is 0 - no delays)")
+		(HOTKEYS_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the hotkeys information")
+		(LAYOUT_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the layout information")
+		(STICK_ENV_TO_WIN, "If set, the tool will require the user to specify a target window for each environment selected")
+		;
+
+	po::variables_map vm;
+
+	try {
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+	} catch (std::exception const & e) {
+		std::cerr << "Error parsing command line arguments. Please specify --help for the details on the allowed options\n" << e.what();
+		return 1;
+	}
+
+	if (vm.count(HELP)) {
+		std::cout << desc;
+		return 2;
+	}
+	if (vm.count(HOTKEYS_CFG)) {
+		hat::tool::HOTKEYS_CONFIG_PATH = vm[HOTKEYS_CFG].as<std::string>();
+		std::cout << "Hotkeys config file: " << hat::tool::HOTKEYS_CONFIG_PATH << "\n";
+	} else {
+		std::cout << "Required option '--" << HOTKEYS_CFG << "' not provided. Exiting.\n";
+		return 3;
+	}
+
+	if (vm.count(LAYOUT_CFG)) {
+		hat::tool::LAYOUT_CONFIG_PATH = vm[LAYOUT_CFG].as<std::string>();
+		std::cout << "Layout config file: " << hat::tool::LAYOUT_CONFIG_PATH << "\n";
+	} else {
+		std::cout << "Required option '--" << LAYOUT_CFG << "' not provided. Exiting.\n";
+		return 4;
+	}
+	if (vm.count(STICK_ENV_TO_WIN)) {
+		if (hat::tool::Engine::canStickToWindows()) {
+			hat::tool::STICK_ENV_TO_WINDOW = true;
+			std::cout << "Setting 'stick to window' flag to true.\n";
+		} else {
+			std::cout << "Could not enable the 'stick to window' option - it is not supported by current system. Ignoring the '" << STICK_ENV_TO_WIN << "' command line argument.\n";
+		}
+	}
+
+	if (vm.count(PORT)) {
+		port = vm[PORT].as<short>();
+	}
+	std::cout << "server will listen on port " << port << " for incoming connections\n";
+
+	if (vm.count(KEYB_DELAY) > 0) {
+		std::cout << "delay for the simulated keyboard events is set to " << vm[KEYB_DELAY].as<int>() << "\n";
+		hat::tool::KEYSTROKES_DELAY = vm[KEYB_DELAY].as<unsigned int>();
+	}
+
+	// --------------------------------- Command line parsing done. Starting the server. --------------------------------- 
+
+	boost::asio::io_service io_service;
+	tau::util::SimpleBoostAsioServer<hat::tool::MyEventsDispatcher>::type s(io_service, port);
+	std::cout << "Starting server on port " << port << "...\n";
+	s.start();
+	std::cout << "Calling io_service.run()\n";
+	io_service.run();
+
+	return 0;
+}
