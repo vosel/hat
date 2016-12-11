@@ -259,8 +259,7 @@ namespace tool {
 		}; // end of lambda that holds the logic for generating the user-defined contents for the layout page (without navigation buttons and auto-generated info label)
 
 		auto selectedEnvCaptionPrefix = isEnv_selected ? ("["s + m_commandsConfig.getEnvironments()[m_selectedEnvironment] + "] "s) : ""s;
-
-
+		
 		auto emptyFallbackID = tau::common::LayoutPageID{ "" };
 		for (size_t i = 0; i < TOP_PAGES_COUNT; ++i) {
 			auto currentPageID = TOP_PAGES_IDS[i];
@@ -270,8 +269,6 @@ namespace tool {
 			auto contents = createLayoutPage(currentPreprocessedPagePresentation, navigationInfo); ///TODO: add m_selectedEnvironment use here
 
 			if (TOP_PAGES_COUNT > 1) {
-				auto layoutDecorations = tau::layout_generation::EvenlySplitLayoutElementsContainer(true);
-				layoutDecorations.push(tau::layout_generation::LabelElement(selectedEnvCaptionPrefix + currentPreprocessedPagePresentation.getNote()));
 				auto navigationButtons = tau::layout_generation::EvenlySplitLayoutElementsContainer(false);
 				auto pushNavigationButton = [&](size_t destIndex)
 				{
@@ -284,13 +281,18 @@ namespace tool {
 					}
 				};
 				if (i == 0) {
-					navigationButtons.push(tau::layout_generation::EvenlySplitLayoutElementsContainer(false).push(
-						tau::layout_generation::ButtonLayoutElement().note("reload").ID(tau::common::ElementID(generateReloadButtonID()))).push(tau::layout_generation::EmptySpace()));
+					navigationButtons.push(tau::layout_generation::UnevenlySplitElementsPair(
+						tau::layout_generation::ButtonLayoutElement().note("reload").ID(tau::common::ElementID(generateReloadButtonID())),
+						tau::layout_generation::EmptySpace(), false, 0.75));
 				} else {
 					pushNavigationButton(i - 1); // this overflows at zero position, but since the unsigned int overflow is well-defined, we don't have a problem here
 				}
 				pushNavigationButton(i + 1);
-				layoutDecorations.push(navigationButtons);
+
+				auto layoutDecorations = tau::layout_generation::UnevenlySplitElementsPair(
+					tau::layout_generation::LabelElement(selectedEnvCaptionPrefix + currentPreprocessedPagePresentation.getNote()),
+					navigationButtons,
+					true, 0.4);
 
 				m_currentNormalLayout.pushLayoutPage(tau::layout_generation::LayoutPage(currentPageID,
 					tau::layout_generation::UnevenlySplitElementsPair(contents, layoutDecorations, true, 0.75)
