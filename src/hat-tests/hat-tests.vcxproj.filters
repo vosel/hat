@@ -19,10 +19,10 @@
     <ClCompile Include="layout_parsing_verificator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LayoutConfigutaionParsingTest.cpp">
+    <ClCompile Include="MainTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MainTest.cpp">
+    <ClCompile Include="LayoutConfiguraionParsingTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

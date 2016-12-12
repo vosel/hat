@@ -22,7 +22,7 @@
     <ClCompile Include="AbstractEngineTest.cpp" />
     <ClCompile Include="ConfigsAbstractionLayerTest.cpp" />
     <ClCompile Include="HotkeysCSV_parsingTest.cpp" />
-    <ClCompile Include="LayoutConfigutaionParsingTest.cpp" />
+    <ClCompile Include="LayoutConfiguraionParsingTest.cpp" />
     <ClCompile Include="layout_parsing_verificator.cpp" />
     <ClCompile Include="MainTest.cpp" />
   </ItemGroup>
