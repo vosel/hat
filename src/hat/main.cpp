@@ -18,8 +18,8 @@ namespace hat {
 namespace tool {
 std::string LAYOUT_CONFIG_PATH;
 std::string HOTKEYS_CONFIG_PATH;
-auto STICK_ENV_TO_WINDOW{ false };
-auto KEYSTROKES_DELAY = unsigned int{ 0 };
+bool STICK_ENV_TO_WINDOW = false;
+unsigned int KEYSTROKES_DELAY = 0;
 
 
 class MyEventsDispatcher : public tau::util::BasicEventsDispatcher
