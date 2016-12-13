@@ -58,3 +58,6 @@ ipch/
 Debug/
 Release/
 x64/
+
+# Makefile output directory
+bin/
