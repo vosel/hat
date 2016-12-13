@@ -113,7 +113,7 @@ namespace tool {
 	{
 		std::fstream csvStream(commandsCSV.c_str());
 		if (!csvStream.is_open()) {
-			throw std::runtime_error("Could not find or open the hotkeys config file: " + commandsCSV);
+			throw std::runtime_error("Could not find or open the commands config file: " + commandsCSV);
 		}
 		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream);
 		std::fstream configStream(layoutConfig.c_str());

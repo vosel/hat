@@ -1,4 +1,4 @@
-hotkey_id	hotkey_category	hotkey_note	hotkey_description	ENV4	ENV2	ENV1	ENV0
+command_id	command_category	command_note	command_description	ENV4	ENV2	ENV1	ENV0
 hk0	category	hk0_note	hk0_desc		
 hk1	category	hk1_note	hk1_desc				hk1{SPC}keys{SPC}0
 hk2	category	hk2_note	hk2_desc			hk2{SPC}keys{SPC}1	

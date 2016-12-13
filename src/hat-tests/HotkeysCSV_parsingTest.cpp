@@ -29,8 +29,8 @@ template<> std::string toString(hat::core::ParsedCsvRow const & toDump)
 TEST_CASE("csv header parser testing", "[csv]")
 {
 	using namespace std::string_literals;
-	const auto requiredHeaderEntries("hotkey_id\thotkey_category\thotkey_note\thotkey_description\t"s);
-	const auto brokenRequredHeaderEntries("hotkey_id\thotkey_category\thotkey_notE\thotkey_description\t"s);; //the required entries should be an exact text match with the expectation
+	const auto requiredHeaderEntries("command_id\tcommand_category\tcommand_note\tcommand_description\t"s);
+	const auto brokenRequredHeaderEntries("command_id\tcommand_category\tcommand_notE\tcommand_description\t"s);; //the required entries should be an exact text match with the expectation
 	const auto correctToolsEntries0("Visual Studio\tEclipse\tAndroid Studio"s);
 	const auto correctToolsEntries1("Visual Studio\tEclipse\tAndroid Studio\t"s);
 	const auto correctToolsEntries2("Visual Studio\tEclipse\t"s);
@@ -127,7 +127,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 
 TEST_CASE("Commands config parsing", "[csv]")
 {
-	std::string configData{ "hotkey_id\thotkey_category\thotkey_note\thotkey_description\tENV1\tENV2\tENV3"
+	std::string configData{ "command_id\tcommand_category\tcommand_note\tcommand_description\tENV1\tENV2\tENV3"
 					  "\nrun\tdebugger\trun\t{F5}\t{F6}\t{F7}"
 					  "\ndebug\tdebugger\tdebug\t{F11}\t{F12}" };
 	std::stringstream configStream(configData);

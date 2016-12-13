@@ -84,7 +84,7 @@ LINKAGE_RESTRICTION bool idStringOk(std::string const & toTest) {
 LINKAGE_RESTRICTION auto ParsedCsvRow::parseHeaderString(std::string const & headerString)
 {
 	using namespace std::string_literals;
-	static const auto leadingRequiredCharacters("hotkey_id\thotkey_category\thotkey_note\thotkey_description\t"s);
+	static const auto leadingRequiredCharacters("command_id\tcommand_category\tcommand_note\tcommand_description\t"s);
 	if (headerString.find(leadingRequiredCharacters) != 0) {
 		throw std::runtime_error("header string should start with the specific elements.");
 	}
