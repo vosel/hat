@@ -90,7 +90,7 @@ namespace tool {
 			std::cout << "Sequence for the command (id='" << commandToExecute.commandID.getValue()
 				<< "')decoded by Robot library. Simulating the sequence:\n\t" << encodedSequence << "\n";
 			auto keyboard = ROBOT_NS::Keyboard{};
-			keyboard.AutoDelay = 0;
+			keyboard.AutoDelay = m_keystrokes_delay;
 			for (auto const & key_event : sequence) {
 				if (key_event.first) {
 					keyboard.Press(key_event.second);

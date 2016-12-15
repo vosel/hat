@@ -165,7 +165,7 @@ int main(int argc, char ** argv)
 	std::cout << "server will listen on port " << port << " for incoming connections\n";
 
 	if (vm.count(KEYB_DELAY) > 0) {
-		std::cout << "delay for the simulated keyboard events is set to " << vm[KEYB_DELAY].as<int>() << "\n";
+		std::cout << "delay for the simulated keyboard events is set to " << vm[KEYB_DELAY].as<unsigned int>() << "\n";
 		hat::tool::KEYSTROKES_DELAY = vm[KEYB_DELAY].as<unsigned int>();
 	}
 
