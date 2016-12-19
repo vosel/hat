@@ -1,0 +1,7 @@
+page:main page
+optionsScreen
+otherCommand
+optionsSelectorPage:optionsScreen;select option
+command1
+command2
+command3

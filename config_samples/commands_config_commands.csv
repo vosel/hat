@@ -1,0 +1,4 @@
+command_id	command_category	command_note	command_description	eclipse	IDEA	Visual Studio
+saveFile	file_operations	save	save the current file	^S	^S	^S
+replaceText	text_editor	find and replace	find and replace in the file	^F	^R	^H
+startDebugger	debugging	debug	start in debugger	{F11}	+{F9}	{F5}

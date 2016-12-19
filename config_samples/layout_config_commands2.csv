@@ -1,0 +1,5 @@
+command_id	command_category	command_note	command_description	ENV1
+command1	test_hotkey	option 1	executes command 1	c1
+command2	test_hotkey	option 2	executes command 2	c2
+command3	test_hotkey	option 3	executes command 3	c3
+otherCommand	test_hotkey	some other command	executes command 3	other
