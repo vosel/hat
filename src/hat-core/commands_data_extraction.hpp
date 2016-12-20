@@ -23,7 +23,7 @@ namespace core {
 
 std::vector<std::string> splitTheRow(std::string const & row, char delimiter, std::function<bool(std::string const &, size_t, bool)> elementsVerificationFunctor);
 std::vector<std::string> splitTheRow(std::string const & row, char delimiter);
-bool idStringOk(std::string const & toTest);
+std::tuple<bool, size_t> idStringOk(std::string const & toTest);
 
 
 //This is a set of tests for the code, which handles the parsing of the data from hotkeys configuration csv.

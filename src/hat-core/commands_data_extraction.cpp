@@ -72,13 +72,14 @@ LINKAGE_RESTRICTION std::vector<std::string> splitTheRow(std::string const & row
 	});
 }
 
-LINKAGE_RESTRICTION bool idStringOk(std::string const & toTest) {
+LINKAGE_RESTRICTION std::tuple<bool, size_t> idStringOk(std::string const & toTest) {
 	auto index = toTest.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_1234567890");
 	if (index != std::string::npos) {
-		std::cerr << "Error: forbidden symbol found in id string : '" << toTest << "' at position " << index << " (symbol: '" << toTest[index] << "').\n";
-		return false;
+		// TODO: add a special command line flag to display this kind of stuff in the console:
+		// std::cerr << "Error: forbidden symbol found in id string : '" << toTest << "' at position " << index << " (symbol: '" << toTest[index] << "').\n";
+		return std::make_tuple(false, index);
 	}
-	return true;
+	return std::make_tuple(true, 0);
 }
 
 LINKAGE_RESTRICTION auto ParsedCsvRow::parseHeaderString(std::string const & headerString)
@@ -86,13 +87,16 @@ LINKAGE_RESTRICTION auto ParsedCsvRow::parseHeaderString(std::string const & hea
 	using namespace std::string_literals;
 	static const auto leadingRequiredCharacters("command_id\tcommand_category\tcommand_note\tcommand_description\t"s);
 	if (headerString.find(leadingRequiredCharacters) != 0) {
-		throw std::runtime_error("header string should start with the specific elements.");
+		static const auto errorMessage = "Error during parsing commands config. Header string should start with the specific elements: " + leadingRequiredCharacters;
+		throw std::runtime_error(errorMessage);
 	}
 	const auto toParse(headerString.substr(leadingRequiredCharacters.size(), headerString.size()));
 
 	return ParsedCsvRow(splitTheRow(toParse, '\t', [](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
 		if ((extractedString.size() == 0) && moreDataInStream) {
-			throw std::runtime_error("empty attribute in the header string - this is not allowed");
+			std::stringstream errorMessage;
+			errorMessage << "Empty attribute in the header string at position " << indexForString << " - this is not allowed";
+			throw std::runtime_error(errorMessage.str());
 		}
 		return true;
 	}));
@@ -103,13 +107,24 @@ LINKAGE_RESTRICTION auto ParsedCsvRow::parseDataRowString(std::string const & ro
 	auto rowElements = splitTheRow(rowString, '\t', [](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
 		if (indexForString == 0) {
 			if (extractedString.size() == 0) {
-				throw std::runtime_error("Each row should have a string id for reperenceing it.");
-			} else if (!idStringOk(extractedString)) {
-				throw std::runtime_error("Forbidden symbol in the id string value.");
+				std::stringstream errormessage;
+				errormessage << "Each row should have a string id for reperenceing it.";
+				throw std::runtime_error(errormessage.str());
+			} else {
+				auto idStingCheck = idStringOk(extractedString);
+				if (!std::get<0>(idStingCheck)) {
+					std::stringstream errormessage;
+					errormessage << "Forbidden symbol in the id string value at position " << std::get<1>(idStingCheck) << ". The ID string: '" << extractedString << "'.";
+					throw std::runtime_error(errormessage.str());
+				}
+				
 			}
 		} else if (indexForString == 1) {
-			if (!idStringOk(extractedString)) {
-				throw std::runtime_error("Forbidden symbol in the category string value.");
+			auto categoryStingCheck = idStringOk(extractedString);
+			if (!std::get<0>(categoryStingCheck)) {
+				std::stringstream errormessage;
+				errormessage << "Forbidden symbol in the category string value at position " << std::get<1>(categoryStingCheck) << ". The categoryID string: '" << extractedString << "'.";
+				throw std::runtime_error(errormessage.str());
 			}
 		} else if ((indexForString == 2) && (extractedString.size() == 0)) {
 			throw std::runtime_error("Each row should have a non-empty string note to associate with it.");
@@ -159,21 +174,33 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 	}
 	auto result = CommandsInfoContainer(ParsedCsvRow::parseHeaderString(tmpStr));
 	auto commands = std::vector<ParsedCsvRow>{};
+	size_t lineCount = 0;
 	while (getLineFromFile(dataSource, tmpStr)) {
-		result.pushDataRow(ParsedCsvRow::parseDataRowString(tmpStr));
+		++lineCount;
+		try {
+			result.pushDataRow(ParsedCsvRow::parseDataRowString(tmpStr));
+		} catch (std::runtime_error & e) {
+			std::stringstream errorMessage;
+			errorMessage << "Error parsing the command configuration file at row " << lineCount << ":\n\t";
+			errorMessage << e.what();
+			throw std::runtime_error(errorMessage.str());
+		}
 	}
 	return result;
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data)
 {
+	std::stringstream errorMessage;
 	using namespace std::string_literals;
 	if (data.m_customColumns.size() > m_environments.size() + 4) {
-		throw std::runtime_error("Too much parameters for the row element. The max amount of parameters should be ('num of environments' + 4). (4 additional parameters are command id, group, button note and description)");
+		errorMessage << "Too much parameters for the row element. The max amount of parameters should be ('num of environments' + 4). (4 additional parameters are command id, group, button note and description)";
+		throw std::runtime_error(errorMessage.str());
 	}
 	auto commandID = CommandID{ data.m_customColumns[0] };
 	if (m_commandsMap.find(commandID) != m_commandsMap.end()) {
-		throw std::runtime_error("A duplicate command id found:"s + commandID.getValue());
+		errorMessage << "A duplicate command id found: '" << commandID.getValue() << "'. This is not allowed.";
+		throw std::runtime_error(errorMessage.str());
 	}
 	m_commandsMap.emplace(commandID, m_commandsList.size());
 	m_commandsList.push_back(Command::create(data, m_environments.size()));
