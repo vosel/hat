@@ -82,7 +82,7 @@ private:
 		try {
 			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
 		} catch (std::runtime_error & e) {
-			std::cerr << "Error during reading of the config files:\n" << e.what() << "\n";
+			std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
 			return false;
 		}
 		return true;
@@ -93,6 +93,19 @@ private:
 		sendPacket_resetLayout(currentLayout);
 	}
 };
+
+bool checkConfigsForErrors() {
+
+	try {
+		std::cout << "Checking configuration files for errors ...\n";
+		Engine::create(COMMANDS_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
+		std::cout << "\t... done.\n";
+	} catch (std::runtime_error & e) {
+		std::cerr << "\n --- Error during reading of the config files at startup:\n" << e.what() << "\n";
+		return false;
+	}
+	return true;
+}
 
 }// namespace tool
 }// namespace hat 
@@ -171,12 +184,15 @@ int main(int argc, char ** argv)
 
 	// --------------------------------- Command line parsing done. Starting the server. --------------------------------- 
 
-	boost::asio::io_service io_service;
-	tau::util::SimpleBoostAsioServer<hat::tool::MyEventsDispatcher>::type s(io_service, port);
-	std::cout << "Starting server on port " << port << "...\n";
-	s.start();
-	std::cout << "Calling io_service.run()\n";
-	io_service.run();
-
-	return 0;
+	// Trying to read configs - make sure that everything is ok.
+	if (hat::tool::checkConfigsForErrors()) {
+		boost::asio::io_service io_service;
+		tau::util::SimpleBoostAsioServer<hat::tool::MyEventsDispatcher>::type s(io_service, port);
+		std::cout << "Starting server on port " << port << "...\n";
+		s.start();
+		std::cout << "Calling io_service.run()\n";
+		io_service.run();
+		return 0;
+	}
+	return 5; // error in configs at startup
 }
