@@ -178,7 +178,9 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 	while (getLineFromFile(dataSource, tmpStr)) {
 		++lineCount;
 		try {
-			result.pushDataRow(ParsedCsvRow::parseDataRowString(tmpStr));
+			if (tmpStr.size() > 0) { // Empty lines are just skipped here
+				result.pushDataRow(ParsedCsvRow::parseDataRowString(tmpStr));
+			}			
 		} catch (std::runtime_error & e) {
 			std::stringstream errorMessage;
 			errorMessage << "Error parsing the command configuration file at row " << lineCount << ":\n\t";
