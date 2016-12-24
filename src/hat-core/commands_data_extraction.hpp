@@ -40,8 +40,8 @@ struct ParsedCsvRow
 
 struct HotkeyCombination
 {
-	bool const enabled;
 	std::string m_value; //TODO: replace with the compiled version of the hotkey
+	bool const enabled;
 	//todo: generate this class's objects by the static calls
 	HotkeyCombination(std::string const & value) : m_value(value), enabled(value.size() > 0) {};
 	void execute();

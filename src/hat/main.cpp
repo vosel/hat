@@ -119,7 +119,6 @@ int main(int argc, char ** argv)
 	auto const KEYB_DELAY = "keysDelay";
 	auto const COMMANDS_CFG = "commands";
 	auto const LAYOUT_CFG = "layout";
-	auto const TYPING_SEQ = "typingSequences";
 	auto const STICK_ENV_TO_WIN = "stickEnvToWindow";
 
 	namespace po = boost::program_options;

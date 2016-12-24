@@ -14,4 +14,4 @@ namespace test {
 	core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & configContents);
 } // namespace test
 } // namespace hat
-#endif	COMMANDS_PARSING_TESTING_UTILS
+#endif // COMMANDS_PARSING_TESTING_UTILS

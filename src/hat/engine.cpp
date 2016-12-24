@@ -15,10 +15,10 @@ namespace tool {
 	Engine::Engine(hat::core::LayoutUserInformation const & layoutInfo,
 		hat::core::CommandsInfoContainer const & commandsConfig, bool stickEnvToWindow, unsigned int keystrokes_delay) :
 		m_selectedEnvironment(0), isEnv_selected(false),
-		m_layoutInfo(layoutInfo),
-		m_commandsConfig(commandsConfig),
 		m_stickEnvToWindow(stickEnvToWindow),
-		m_keystrokes_delay(keystrokes_delay)
+		m_keystrokes_delay(keystrokes_delay),
+		m_layoutInfo(layoutInfo),
+		m_commandsConfig(commandsConfig)
 	{
 		if (!shouldShowEnvironmentSelectionPage()) { // if there is only one environment, we don't need to select anything
 			setNewEnvironment(0);
