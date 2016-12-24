@@ -172,7 +172,7 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 	if (!getLineFromFile(dataSource, tmpStr)) {
 		throw std::runtime_error("No data in the commands config stream.");
 	}
-	auto result = CommandsInfoContainer(ParsedCsvRow::parseHeaderString(tmpStr));
+	auto result = CommandsInfoContainer(ParsedCsvRow::parseHeaderString(clearUTF8_byteOrderMark(tmpStr)));
 	auto commands = std::vector<ParsedCsvRow>{};
 	size_t lineCount = 0;
 	while (getLineFromFile(dataSource, tmpStr)) {

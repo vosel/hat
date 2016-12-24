@@ -11,6 +11,8 @@
 namespace hat {
 namespace core {
 	std::istream & getLineFromFile(std::istream & filestream, std::string & target);
+	std::string clearUTF8_byteOrderMark(std::string const & firstLineOfFile);
+	std::string escapeRawUTF8_forJson(std::string const & stringToProcess);
 } //namespace core
 } //namespace hat
 

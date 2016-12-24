@@ -212,7 +212,7 @@ namespace tool {
 				for (auto const & elem : row) {
 					if (elem.is_button()) {
 						auto toPush = tau::layout_generation::ButtonLayoutElement();
-						toPush.note(elem.getNote());
+						toPush.note(hat::core::escapeRawUTF8_forJson(elem.getNote()));
 						if (elem.isActive()) {
 							if (elem.getReferencedCommand().nonEmpty()) {
 								size_t commandIndex = m_commandsConfig.getCommandIndex(elem.getReferencedCommand());
@@ -230,7 +230,7 @@ namespace tool {
 
 								//decorate the page here:
 								auto layoutDecorations = tau::layout_generation::EvenlySplitLayoutElementsContainer(true);
-								layoutDecorations.push(tau::layout_generation::LabelElement(elem.getNote()));
+								layoutDecorations.push(tau::layout_generation::LabelElement(hat::core::escapeRawUTF8_forJson(elem.getNote())));
 								layoutDecorations.push(tau::layout_generation::ButtonLayoutElement()
 									.note("back").switchToAnotherLayoutPageOnClick(navigationIDs.m_currentPageID));
 
@@ -249,7 +249,7 @@ namespace tool {
 						}
 						newElementsRow.push(toPush);
 					} else {
-						newElementsRow.push(tau::layout_generation::LabelElement(elem.getNote()));
+						newElementsRow.push(tau::layout_generation::LabelElement(hat::core::escapeRawUTF8_forJson(elem.getNote())));
 					}
 
 				}
@@ -274,7 +274,8 @@ namespace tool {
 				{
 					if ((destIndex >= 0) && (destIndex < TOP_PAGES_COUNT)) {
 						navigationButtons.push(
-							tau::layout_generation::ButtonLayoutElement().note(currentLayoutState.getPages()[destIndex].getNote())
+							tau::layout_generation::ButtonLayoutElement().note(
+								hat::core::escapeRawUTF8_forJson(currentLayoutState.getPages()[destIndex].getNote()))
 							.switchToAnotherLayoutPageOnClick(tau::common::LayoutPageID(TOP_PAGES_IDS[destIndex])));
 					} else {
 						navigationButtons.push(tau::layout_generation::EmptySpace());
@@ -290,7 +291,8 @@ namespace tool {
 				pushNavigationButton(i + 1);
 
 				auto layoutDecorations = tau::layout_generation::UnevenlySplitElementsPair(
-					tau::layout_generation::LabelElement(selectedEnvCaptionPrefix + currentPreprocessedPagePresentation.getNote()),
+					tau::layout_generation::LabelElement(
+						hat::core::escapeRawUTF8_forJson(selectedEnvCaptionPrefix + currentPreprocessedPagePresentation.getNote())),
 					navigationButtons,
 					true, 0.4);
 

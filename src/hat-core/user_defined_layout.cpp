@@ -188,7 +188,12 @@ LINKAGE_RESTRICTION auto LayoutUserInformation::parseConfigFile(std::istream & d
 	LayoutUserInformation result;
 	std::string tmpString;
 	LayoutPageTemplate * currentlyConstructedPage = nullptr;
+	bool firstLine = true;
 	while (getLineFromFile(dataToParse, tmpString)) {
+		if (firstLine) {
+			tmpString = clearUTF8_byteOrderMark(tmpString);
+			firstLine = false;
+		}
 		if (LayoutPageTemplate::isStartOfNewPage(tmpString)) {
 			result.m_layoutPages.push_back(LayoutPageTemplate::create(LayoutPageTemplate::getNormalPageCaptionFromHeader(tmpString)));
 			currentlyConstructedPage = &(result.m_layoutPages.back());
@@ -199,6 +204,7 @@ LINKAGE_RESTRICTION auto LayoutUserInformation::parseConfigFile(std::istream & d
 				errorMessage << "Duplicate id for the selector page: " << selectorPageOptions.m_id.getValue(); //TOOD: add test for this error
 				throw std::runtime_error(errorMessage.str().c_str());
 			}
+			//TODO: call the escapeRawUTF8_forJson(extractedString) here - make sure that an exception is not thrown here (actual convertion is done in the json generation)
 			result.m_optionsSelectionPages[selectorPageOptions.m_id] = LayoutPageTemplate::create(selectorPageOptions.m_caption);
 			currentlyConstructedPage = &(result.m_optionsSelectionPages.at(selectorPageOptions.m_id));
 		} else {
