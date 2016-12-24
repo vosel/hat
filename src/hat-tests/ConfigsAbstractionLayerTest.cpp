@@ -5,6 +5,7 @@
 
 #include "layout_parsing_verificator.hpp"
 #include "../hat-core/configs_abstraction_layer.hpp"
+#include "commands_parsing_testing_utils.hpp"
 #include <sstream>
 #include <vector>
 #include "../external_dependencies/Catch/single_include/catch.hpp"
@@ -32,8 +33,11 @@ const auto commandsConfiguration = std::string{
 	"hkE\tcategory\thkE_note\thkE_desc\thkE_keys_3\thkE_keys_2\thkE_keys_1\t\n"                    //ENV4, ENV2, ENV1
 	"hkF\tcategory\thkF_note\thkF_desc\thkF_keys_3\thkF_keys_2\thkF_keys_1\thkF_keys_0\n"          //ENV4, ENV2, ENV1, ENV0
 };
-std::stringstream commandsStream{ commandsConfiguration };
-const auto COMMANDS_INFO_CONTAINER = hat::core::CommandsInfoContainer::parseConfigFile(commandsStream);
+const auto & getDefaultCommandsInfoContainer()
+{ //this is wrapped into function because it calls REQUIRE() macro inside, so we can't put it into global call (it should be called from a test case)
+	static auto toReturn = hat::test::simulateParseConfigFileCall(commandsConfiguration);
+	return toReturn;
+}
 
 const auto ENV0 = size_t{ 3 };
 const auto ENV1 = size_t{ 2 };
@@ -116,7 +120,7 @@ TEST_CASE("test appropriate command buttons disabled", "[configs_abstraction]")
 	verificator.verifyConfigIsOK();
 
 	//verify the generated preprocessed layouts for situations when no ENV is selected, or ENV0, ENV1 or ENV2 is selected:
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -185,7 +189,7 @@ TEST_CASE("test appropriate selectors disabled (if no enabled buttons inside)", 
 	verificator.addRow({ COMMAND_BUTTON_ON_SUBSELECTOR_PAGE_ID });
 	verificator.verifyConfigIsOK();
 
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -254,7 +258,7 @@ TEST_CASE("test correct options picked(buttons and selectors)", "[configs_abstra
 	verificator.verifyConfigIsOK();
 
 	//std::cout << verificator.getAccumulatedConfigText(); //DEBUG
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -302,7 +306,7 @@ TEST_CASE("test that pages with no active buttons are not shown", "[configs_abst
 	verificator.startNewPage(ENV0_2_PAGE_CAPTION);
 	verificator.addRow({ COMMAND_ENABLED_FOR_ENV0_2_ID });
 	verificator.verifyConfigIsOK();
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -342,9 +346,8 @@ TEST_CASE("test that when there is one ENV, we don't show ENV selection page", "
 	verificator.addRow({ COMMAND_ID });
 	verificator.verifyConfigIsOK();
 
-	std::stringstream commandsStream{ singleENVCommandsConfiguration };
-	const auto COMMANDS_INFO_CONTAINER = hat::core::CommandsInfoContainer::parseConfigFile(commandsStream);
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER };
+	const auto COMMANDS_INFO_CONTAINER123 = hat::test::simulateParseConfigFileCall(singleENVCommandsConfiguration);
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER123 };
 
 	auto tested_layout = layoutsGenerator.generateLayoutPresentation(0, true);
 

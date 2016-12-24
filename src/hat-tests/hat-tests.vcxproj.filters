@@ -25,9 +25,15 @@
     <ClCompile Include="LayoutConfiguraionParsingTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="commands_parsing_testing_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="layout_parsing_verificator.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="commands_parsing_testing_utils.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

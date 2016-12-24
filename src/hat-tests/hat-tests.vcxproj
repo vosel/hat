@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AbstractEngineTest.cpp" />
+    <ClCompile Include="commands_parsing_testing_utils.cpp" />
     <ClCompile Include="ConfigsAbstractionLayerTest.cpp" />
     <ClCompile Include="HotkeysCSV_parsingTest.cpp" />
     <ClCompile Include="LayoutConfiguraionParsingTest.cpp" />
@@ -27,6 +28,7 @@
     <ClCompile Include="MainTest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="commands_parsing_testing_utils.hpp" />
     <ClInclude Include="layout_parsing_verificator.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

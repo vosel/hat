@@ -4,6 +4,7 @@
 // See LICENSE.txt for the licence information.
 
 #include "../hat-core/commands_data_extraction.hpp"
+#include "commands_parsing_testing_utils.hpp"
 #include <sstream>
 #include <string>
 #include <vector>
@@ -130,9 +131,8 @@ TEST_CASE("Commands config parsing", "[csv]")
 	std::string configData{ "command_id\tcommand_category\tcommand_note\tcommand_description\tENV1\tENV2\tENV3"
 					  "\nrun\tdebugger\trun\t{F5}\t{F6}\t{F7}"
 					  "\ndebug\tdebugger\tdebug\t{F11}\t{F12}" };
-	std::stringstream configStream(configData);
 
-	auto testObject = hat::core::CommandsInfoContainer::parseConfigFile(configStream);
+	auto testObject = hat::test::simulateParseConfigFileCall(configData);
 
 	hat::core::CommandsInfoContainer referenceObject(hat::core::ParsedCsvRow({ "ENV1"s, "ENV2"s, "ENV3"s }));
 	referenceObject.pushDataRow(hat::core::ParsedCsvRow({ "run"s, "debugger"s, "run"s, "{F5}"s, "{F6}"s, "{F7}"s }));

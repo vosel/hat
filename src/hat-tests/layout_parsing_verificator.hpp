@@ -20,6 +20,7 @@ class LayoutConfigParsingVerificator
 private:
 	hat::core::LayoutPageTemplate & getCurrentlyConstructedPage();
 public:
+	//LayoutConfigParsingVerificator(std::string const & BOM_TO_USE)
 	void startNewPage(std::string const & caption);
 	void startNewOptionsSelectorPage(std::string const & caption, std::string const & id);
 

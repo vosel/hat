@@ -44,9 +44,18 @@ void LayoutConfigParsingVerificator::addRow(std::vector<std::string> const & val
 void LayoutConfigParsingVerificator::verifyConfigIsOK()
 {
 	std::string configurationToReadAndTest = configStream.str();
-	std::stringstream mystream(configurationToReadAndTest);
-	auto test = hat::core::LayoutUserInformation::parseConfigFile(mystream);
-	REQUIRE(test == accumulatedConfig);
+	{
+		std::stringstream mystream(configurationToReadAndTest);
+		auto test = hat::core::LayoutUserInformation::parseConfigFile(mystream);
+		REQUIRE(test == accumulatedConfig);
+	}
+	{
+		static const std::string UTF8_BOM{char(0xEF), char(0xBB), char(0xBF)}; // TOOD: this constant is duplicated in several places. Maybe should put it in one place.
+		std::string configurationToReadAndTest_withBOM = UTF8_BOM + configurationToReadAndTest;
+		std::stringstream mystream2(configurationToReadAndTest_withBOM);
+		auto test_BOM = hat::core::LayoutUserInformation::parseConfigFile(mystream2);
+		REQUIRE(test_BOM == accumulatedConfig);
+	}
 }
 
 hat::core::LayoutUserInformation & LayoutConfigParsingVerificator::getAccumulatedConfig()
