@@ -51,7 +51,7 @@ LINKAGE_RESTRICTION std::string escapeRawUTF8_forJson(std::string const & string
 	for (size_t i = 0; i < stringToProcess.size(); ++i) {
 		char current = stringToProcess[i];
 		// Find out the bytecount of the pending character in UTF-8 encoding:
-		auto isSingleByte = (SINGLE_BYTE_CODEPOINT_MASK & current) == 0);
+		auto isSingleByte = (SINGLE_BYTE_CODEPOINT_MASK & current) == 0;
 		if (isSingleByte || DONT_ESCAPE_UTF_8_SYMBOLS) { //simple character, will put it as-is (escape only the '"' symbol, because it will screw up the json parsing)
 			if (current =='"') {
 				result << '\\';
