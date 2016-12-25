@@ -148,8 +148,8 @@ public:
 		FUNC_ID_switchLayout_restoreToNormalLayout(generateUniqueStr())
 	{}
 	mutable CallExpectationTester m_callsExpectationsTester;
-	bool canSendCommandsToWindowRightNow;
-	bool setNewEnvResult;
+	bool canSendCommandsToWindowRightNow{true};
+	bool setNewEnvResult{true}; // by default the environment setting operation succeedes
 };
 }
 
