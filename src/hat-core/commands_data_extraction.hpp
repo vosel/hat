@@ -25,7 +25,6 @@ std::vector<std::string> splitTheRow(std::string const & row, char delimiter, st
 std::vector<std::string> splitTheRow(std::string const & row, char delimiter);
 std::tuple<bool, size_t> idStringOk(std::string const & toTest);
 
-
 //This is a set of tests for the code, which handles the parsing of the data from hotkeys configuration csv.
 struct ParsedCsvRow
 {
@@ -44,8 +43,11 @@ struct HotkeyCombination
 	bool const enabled;
 	//todo: generate this class's objects by the static calls
 	HotkeyCombination(std::string const & value) : m_value(value), enabled(value.size() > 0) {};
-	void execute();
+	HotkeyCombination(std::string const & value, bool enable) : m_value(value), enabled(enable) {};
+	virtual void execute();
 };
+
+typedef std::function<std::shared_ptr<HotkeyCombination>(std::string const & , CommandID const & )> HotkeyCombinationFactoryMethod;
 
 struct Command
 {
@@ -58,7 +60,7 @@ struct Command
 
 	Command(std::string const & c_id, std::string const & c_desc, std::string const & c_gr, HotkeysForDifferentEnvironments & hkeys);
 	bool operator == (Command const & other) const;
-	static Command create(hat::core::ParsedCsvRow const & data, size_t customColumnsCount);
+	static Command create(hat::core::ParsedCsvRow const & data, size_t customColumnsCount, HotkeyCombinationFactoryMethod hotkey_builder);
 };
 
 //The class, which knows everything about all the hotkey combinations for all the environments
@@ -73,6 +75,7 @@ struct CommandsInfoContainer
 	CommandsContainer m_commandsList;
 
 	CommandsInfoContainer(hat::core::ParsedCsvRow const & parsedHeader) :m_environments(parsedHeader.m_customColumns) {}
+	void pushDataRow(hat::core::ParsedCsvRow const & data, HotkeyCombinationFactoryMethod hotkey_builder);
 	void pushDataRow(hat::core::ParsedCsvRow const & data);
 
 	//TODO: make this private (the user code should access commands through indices
@@ -83,7 +86,7 @@ struct CommandsInfoContainer
 	EnvsContainer const & getEnvironments() const;
 
 	CommandsContainer const & getAllCommands() const;
-	static CommandsInfoContainer parseConfigFile(std::istream & dataSource);
+	static CommandsInfoContainer parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
 	bool operator == (CommandsInfoContainer const  & other) const;
 };
 

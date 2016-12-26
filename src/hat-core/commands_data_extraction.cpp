@@ -31,7 +31,7 @@ LINKAGE_RESTRICTION bool Command::operator == (Command const & other) const
 	return commandID == other.commandID;
 }
 
-LINKAGE_RESTRICTION Command Command::create(hat::core::ParsedCsvRow const & data, size_t customColumnsCount)
+LINKAGE_RESTRICTION Command Command::create(hat::core::ParsedCsvRow const & data, size_t customColumnsCount, HotkeyCombinationFactoryMethod hotkey_builder)
 {
 	using namespace std::string_literals;
 	auto c_id = data.m_customColumns[0];
@@ -41,9 +41,9 @@ LINKAGE_RESTRICTION Command Command::create(hat::core::ParsedCsvRow const & data
 	target.reserve(customColumnsCount);
 	for (size_t i = 0; i < customColumnsCount; ++i) {
 		if (i < data.m_customColumns.size() - 4) {
-			target.push_back(std::make_shared<HotkeyCombination>(data.m_customColumns[i + 4]));
+			target.push_back(hotkey_builder(data.m_customColumns[i + 4], CommandID(c_id)));
 		} else {
-			target.push_back(std::make_shared<HotkeyCombination>(""));
+			target.push_back(std::make_shared<HotkeyCombination>("")); // just an empty disabled combination. Maybe will also generate it through hotkey_builder though
 		}
 	}
 	return Command(c_id, c_desc, c_gr, target);
@@ -166,7 +166,7 @@ LINKAGE_RESTRICTION bool CommandsInfoContainer::operator == (CommandsInfoContain
 	return ((m_environments == other.m_environments) && (m_commandsList == other.m_commandsList)); // TODO: implement this properly
 }
 
-LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile(std::istream & dataSource)
+LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder)
 {
 	auto tmpStr = std::string{};
 	if (!getLineFromFile(dataSource, tmpStr)) {
@@ -179,7 +179,7 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 		++lineCount;
 		try {
 			if (tmpStr.size() > 0) { // Empty lines are just skipped here
-				result.pushDataRow(ParsedCsvRow::parseDataRowString(tmpStr));
+				result.pushDataRow(ParsedCsvRow::parseDataRowString(tmpStr), hotkey_builder);
 			}			
 		} catch (std::runtime_error & e) {
 			std::stringstream errorMessage;
@@ -193,6 +193,14 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data)
 {
+	auto myLambda =  [] (std::string const & param, CommandID const & commandID) {
+		return std::make_shared<HotkeyCombination>(param);		
+	};
+	pushDataRow(data, myLambda);
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data, HotkeyCombinationFactoryMethod hotkey_builder)
+{
 	std::stringstream errorMessage;
 	using namespace std::string_literals;
 	if (data.m_customColumns.size() > m_environments.size() + 4) {
@@ -205,7 +213,7 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsv
 		throw std::runtime_error(errorMessage.str());
 	}
 	m_commandsMap.emplace(commandID, m_commandsList.size());
-	m_commandsList.push_back(Command::create(data, m_environments.size()));
+	m_commandsList.push_back(Command::create(data, m_environments.size(), hotkey_builder));
 }
 
 LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, CommandsInfoContainer const & toDump)

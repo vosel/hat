@@ -80,28 +80,14 @@ namespace tool {
 	void Engine::executeCommandForCurrentlySelectedEnvironment(size_t commandIndex)
 	{
 		hat::core::Command commandToExecute = m_commandsConfig.m_commandsList[commandIndex];
-		//commandToExecute.hotkeysForEnvironments[m_selectedEnvironment]->execute();	
 
-		auto const & encodedSequence = commandToExecute.hotkeysForEnvironments[m_selectedEnvironment]->m_value;
-		ROBOT_NS::KeyList sequence;
-		auto result = ROBOT_NS::Keyboard::Compile(encodedSequence.c_str(), sequence);
-		//TODO: remove this code from here - need to verify the code sequences during reading of the configs. Here only the actual execution of the commands should be done.
-		if (result) {
+		auto & hotkeyToExecute = commandToExecute.hotkeysForEnvironments[m_selectedEnvironment];
+		
+		if (hotkeyToExecute->enabled) { // debug output
 			std::cout << "Sequence for the command (id='" << commandToExecute.commandID.getValue()
-				<< "')decoded by Robot library. Simulating the sequence:\n\t" << encodedSequence << "\n";
-			auto keyboard = ROBOT_NS::Keyboard{};
-			keyboard.AutoDelay = m_keystrokes_delay;
-			for (auto const & key_event : sequence) {
-				if (key_event.first) {
-					keyboard.Press(key_event.second);
-				} else {
-					keyboard.Release(key_event.second);
-				}
-			}
-		} else {
-			std::cout << "Error during decoding of the sequence for the command (id='"
-				<< commandToExecute.commandID.getValue() << "') by Robot library:\n\t" << encodedSequence << "\n";
+				<< "') decoded by Robot library. Simulating the sequence:\n\t" << hotkeyToExecute->m_value << "\n";
 		}
+		commandToExecute.hotkeysForEnvironments[m_selectedEnvironment]->execute();
 	}
 
 	bool Engine::canStickToWindows()
@@ -115,7 +101,42 @@ namespace tool {
 		if (!csvStream.is_open()) {
 			throw std::runtime_error("Could not find or open the commands config file: " + commandsCSV);
 		}
-		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream);
+
+		class MyHotkeyCombination: public core::HotkeyCombination
+		{
+			ROBOT_NS::KeyList m_sequence;
+			unsigned int m_keystrokes_delay;
+		public:
+			MyHotkeyCombination(std::string const & param, bool isEnabled, ROBOT_NS::KeyList const & sequence, unsigned int keystrokes_delay): core::HotkeyCombination(param, isEnabled), m_sequence(sequence), m_keystrokes_delay(keystrokes_delay) {
+			}
+			virtual void execute() override {
+				if (enabled) {
+					auto keyboard = ROBOT_NS::Keyboard{};
+					keyboard.AutoDelay = m_keystrokes_delay;
+					for (auto const & key_event : m_sequence) {
+						if (key_event.first) {
+							keyboard.Press(key_event.second);
+						} else {
+							keyboard.Release(key_event.second);
+						}
+					}
+				}				
+			}
+		};
+
+
+		auto myLambda = [&] (std::string const & param, core::CommandID const & commandID) {
+			ROBOT_NS::KeyList sequence;
+			auto result = ROBOT_NS::Keyboard::Compile(param.c_str(), sequence);
+			if (!result) {
+				std::cout << "Error during decoding of the sequence for the command (id='"
+					<< commandID.getValue() << "') by Robot library:\n\t" << param << "\nThe sequence will be disabled.\n";
+			}
+			auto shouldEnable = result && (param.size() > 0);
+			return std::make_shared<MyHotkeyCombination>(param, shouldEnable, sequence, keyboard_intervals);
+		};
+
+		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream, myLambda);
 		std::fstream configStream(layoutConfig.c_str());
 		if (!configStream.is_open()) {
 			throw std::runtime_error("Could not find or open the layout config file: " + layoutConfig);
