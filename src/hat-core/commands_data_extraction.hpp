@@ -34,7 +34,7 @@ struct ParsedCsvRow
 	bool operator == (ParsedCsvRow const & other) const { return m_customColumns == other.m_customColumns; };
 	bool operator != (ParsedCsvRow const & other) const { return m_customColumns != other.m_customColumns; };
 	static auto parseHeaderString(std::string const & headerString);
-	static auto parseDataRowString(std::string const & rowString); // TODO; add a parameter of environments count (make sure that the length of m_customColumns is consistent (not bigger and not smaller then expected))
+	static auto parseDataRowString(std::string const & rowString); // TODO: add environments count parameter (make sure that the length of m_customColumns is consistent (not bigger and not smaller then expected))
 };
 
 struct HotkeyCombination
