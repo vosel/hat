@@ -23,3 +23,4 @@ tool:
 clean:
 	cd ./hat && $(MAKE) clean
 	cd ./hat-tests && $(MAKE) clean
+	rm -d $(OUTPUT_DIR_NAME)
