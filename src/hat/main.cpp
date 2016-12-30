@@ -113,8 +113,10 @@ bool checkConfigsForErrors() {
 
 int main(int argc, char ** argv)
 {
+	auto const VERSION_STR = "0.1.0";
 	// --------------------------------- Command line parameters parsing --------------------------------- 
 	auto const HELP = "help";
+	auto const VERSION = "version";
 	auto const PORT = "port";
 	auto const KEYB_DELAY = "keysDelay";
 	auto const COMMANDS_CFG = "commands";
@@ -126,6 +128,7 @@ int main(int argc, char ** argv)
 	auto desc = po::options_description{ "Allowed options" };
 	desc.add_options()
 		(HELP, "Output this help message and exit")
+		(VERSION, "Print the tool version and exit")
 		(PORT, po::value<short>(), "Set the server listen port")
 		(KEYB_DELAY, po::value<unsigned int>(), "delay interval between simulated keystrokes in milliseconds (default is 0 - no delays)")
 		(COMMANDS_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the commands information")
@@ -143,10 +146,15 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
-	if (vm.count(HELP)) {
-		std::cout << desc;
+	if ((vm.count(VERSION) > 0) || (vm.count(HELP) > 0)) {
+		std::cout << "HAT (Hotkey Abstraction Tool) " << VERSION_STR << "\n";
+		std::cout << "Copyright (C) 2016 Yuriy Vosel, https://github.com/vosel\n";
+		if (vm.count(HELP)) {
+			std::cout << desc;
+		}
 		return 2;
 	}
+
 	if (vm.count(COMMANDS_CFG)) {
 		hat::tool::COMMANDS_CONFIG_PATH = vm[COMMANDS_CFG].as<std::string>();
 		std::cout << "Commands config file: " << hat::tool::COMMANDS_CONFIG_PATH << "\n";
