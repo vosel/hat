@@ -103,8 +103,10 @@ SCENARIO("csv data presentation tests", "[csv]")
 			THEN("Commands container size should be 4.") {
 				REQUIRE(testContainer.getAllCommands().size() == 4);
 			}
-			WHEN("Row element with too much hotkey options is added, exception is thrown.") {
-				REQUIRE_THROWS(testContainer.pushDataRow(hat::core::ParsedCsvRow({ "terminate","","r", "", "", "", "" })););
+			WHEN("Row element with too much hotkey options is added") {
+				THEN("An exception is thrown") {
+					REQUIRE_THROWS(testContainer.pushDataRow(hat::core::ParsedCsvRow({ "terminate","","r", "", "", "", "" })););
+				}
 			}
 			WHEN("Row element with duplicate command ID is added") {
 				THEN("An exception is thrown") {
