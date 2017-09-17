@@ -166,6 +166,27 @@ LINKAGE_RESTRICTION bool CommandsInfoContainer::operator == (CommandsInfoContain
 	return ((m_environments == other.m_environments) && (m_commandsList == other.m_commandsList)); // TODO: implement this properly
 }
 
+namespace {
+
+void processFileStream(std::istream & dataSource, size_t lineCounterStart, std::string const & fileTypeDescription, std::function<void (std::string const &)> dataProcessor) {
+	auto tmpStr = std::string{};
+	size_t lineCount = lineCounterStart;
+	while (getLineFromFile(dataSource, tmpStr)) {
+		++lineCount;
+		try {
+			if (tmpStr.size() > 0) { // Empty lines are just skipped here
+				dataProcessor(tmpStr);
+			}
+		} catch (std::runtime_error & e) {
+			std::stringstream errorMessage;
+			errorMessage << "Error parsing the " << fileTypeDescription << " configuration file at line " << lineCount << ":\n\t";
+			errorMessage << e.what();
+			throw std::runtime_error(errorMessage.str());
+		}
+	}
+}
+}
+
 LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder)
 {
 	auto tmpStr = std::string{};
@@ -173,21 +194,11 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 		throw std::runtime_error("No data in the commands config stream.");
 	}
 	auto result = CommandsInfoContainer(ParsedCsvRow::parseHeaderString(clearUTF8_byteOrderMark(tmpStr)));
-	auto commands = std::vector<ParsedCsvRow>{};
-	size_t lineCount = 0;
-	while (getLineFromFile(dataSource, tmpStr)) {
-		++lineCount;
-		try {
-			if (tmpStr.size() > 0) { // Empty lines are just skipped here
-				result.pushDataRow(ParsedCsvRow::parseDataRowString(tmpStr), hotkey_builder);
-			}			
-		} catch (std::runtime_error & e) {
-			std::stringstream errorMessage;
-			errorMessage << "Error parsing the command configuration file at row " << lineCount << ":\n\t";
-			errorMessage << e.what();
-			throw std::runtime_error(errorMessage.str());
-		}
-	}
+
+	auto dataLineProcessor = [&result, &hotkey_builder](std::string const & lineToProcess) {
+		result.pushDataRow(ParsedCsvRow::parseDataRowString(lineToProcess), hotkey_builder);
+	};
+	processFileStream(dataSource, 1, "command", dataLineProcessor);
 	return result;
 }
 
