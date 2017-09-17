@@ -81,7 +81,15 @@ LINKAGE_RESTRICTION std::tuple<bool, size_t> idStringOk(std::string const & toTe
 	}
 	return std::make_tuple(true, 0);
 }
-
+LINKAGE_RESTRICTION void ensureIdStringOk(std::string const & toTest)
+{
+	auto idStingCheck = idStringOk(toTest);
+	if (!std::get<0>(idStingCheck)) {
+		std::stringstream errormessage;
+		errormessage << "Forbidden symbol in the id string value at position " << std::get<1>(idStingCheck) << ". The ID string: '" << extractedString << "'.";
+		throw std::runtime_error(errormessage.str());
+	}
+}
 LINKAGE_RESTRICTION auto ParsedCsvRow::parseHeaderString(std::string const & headerString)
 {
 	using namespace std::string_literals;
@@ -111,13 +119,7 @@ LINKAGE_RESTRICTION auto ParsedCsvRow::parseDataRowString(std::string const & ro
 				errormessage << "Each row should have a string id for reperenceing it.";
 				throw std::runtime_error(errormessage.str());
 			} else {
-				auto idStingCheck = idStringOk(extractedString);
-				if (!std::get<0>(idStingCheck)) {
-					std::stringstream errormessage;
-					errormessage << "Forbidden symbol in the id string value at position " << std::get<1>(idStingCheck) << ". The ID string: '" << extractedString << "'.";
-					throw std::runtime_error(errormessage.str());
-				}
-				
+				ensureIdStringOk(extractedString);
 			}
 		} else if (indexForString == 1) {
 			auto categoryStingCheck = idStringOk(extractedString);
