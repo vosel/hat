@@ -86,7 +86,7 @@ LINKAGE_RESTRICTION void ensureIdStringOk(std::string const & toTest)
 	auto idStingCheck = idStringOk(toTest);
 	if (!std::get<0>(idStingCheck)) {
 		std::stringstream errormessage;
-		errormessage << "Forbidden symbol in the id string value at position " << std::get<1>(idStingCheck) << ". The ID string: '" << extractedString << "'.";
+		errormessage << "Forbidden symbol in the id string value at position " << std::get<1>(idStingCheck) << ". The ID string: '" << toTest << "'.";
 		throw std::runtime_error(errormessage.str());
 	}
 }
