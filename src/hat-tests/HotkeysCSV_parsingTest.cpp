@@ -132,14 +132,14 @@ SCENARIO("csv data presentation tests", "[csv]")
 TEST_CASE("Commands config parsing", "[csv]")
 {
 	std::string configData{ "command_id\tcommand_category\tcommand_note\tcommand_description\tENV1\tENV2\tENV3"
-					  "\nrun\tdebugger\trun\t{F5}\t{F6}\t{F7}"
-					  "\ndebug\tdebugger\tdebug\t{F11}\t{F12}" };
+		"\nrun\tdebugger\trun\ttest_desc\t{F5}\t{F6}\t{F7}"
+		"\ndebug\tdebugger\tdebug\ttest_desc\t{F11}\t{F12}" };
 
 	auto testObject = hat::test::simulateParseConfigFileCall(configData);
 
 	hat::core::CommandsInfoContainer referenceObject(hat::core::ParsedCsvRow({ "ENV1"s, "ENV2"s, "ENV3"s }));
-	referenceObject.pushDataRow(hat::core::ParsedCsvRow({ "run"s, "debugger"s, "run"s, "{F5}"s, "{F6}"s, "{F7}"s }));
-	referenceObject.pushDataRow(hat::core::ParsedCsvRow({ "debug"s, "debugger"s, "debug"s, "{F11}"s, "{F12}"s }));
+	referenceObject.pushDataRow(hat::core::ParsedCsvRow({ "run"s, "debugger"s, "run"s, "test_desc"s, "{F5}"s, "{F6}"s, "{F7}"s }));
+	referenceObject.pushDataRow(hat::core::ParsedCsvRow({ "debug"s, "debugger"s, "debug"s, "test_desc"s, "{F11}"s, "{F12}"s }));
 	REQUIRE(referenceObject == testObject);
 }
 
