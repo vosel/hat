@@ -95,22 +95,23 @@ SCENARIO("csv data presentation tests", "[csv]")
 		REQUIRE(supportedENVs[1] == ENVs[1]);
 		REQUIRE(supportedENVs[2] == ENVs[2]);
 		WHEN("4 row items are added") {
+			auto throwawayCommandID = CommandID{"throwaway_command_id"s}; // The command id object, which is used for testing the situations when exception is thrown. The commands with this id should not get into the tested container object.
 			std::vector<CommandID> commandIDs{ CommandID{"run"s}, CommandID{ "debug"s}, CommandID{ "restart"s}, CommandID{ "terminate"s} };
-			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[0].getValue(),      "","r", "", "", "" }));
-			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[1].getValue(),    "","d", "", "", "" }));
-			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[2].getValue(),  "","t", "", "", "" }));
-			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[3].getValue(),"","r", "", "", "" }));
-			THEN("Commands container size should be 4.") {
+			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[0].getValue(), "", "r", "", "", "" }));
+			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[1].getValue(), "", "d", "", "", "" }));
+			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[2].getValue(), "", "r", "", "", "" }));
+			testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[3].getValue(), "", "t", "", "", "" }));
+			THEN("Commands container's size should be 4.") {
 				REQUIRE(testContainer.getAllCommands().size() == 4);
 			}
 			WHEN("Row element with too much hotkey options is added") {
 				THEN("An exception is thrown") {
-					REQUIRE_THROWS(testContainer.pushDataRow(hat::core::ParsedCsvRow({ "terminate","","r", "", "", "", "" })););
+					REQUIRE_THROWS(testContainer.pushDataRow(hat::core::ParsedCsvRow({ throwawayCommandID.getValue(), "", "r", "", "", "", "", "" })););
 				}
 			}
 			WHEN("Row element with duplicate command ID is added") {
 				THEN("An exception is thrown") {
-					REQUIRE_THROWS(testContainer.pushDataRow(hat::core::ParsedCsvRow({ "run",		"","r" })));
+					REQUIRE_THROWS(testContainer.pushDataRow(hat::core::ParsedCsvRow({ commandIDs[0].getValue(), "","r" })));
 				}
 			}
 			WHEN("Element with specific ID is requested") {
@@ -122,7 +123,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 				}
 			}
 			WHEN("Element with unknown ID is requested, an exception is thrown") {
-				REQUIRE_THROWS(testContainer.getCommandPrefs(hat::core::CommandID{ "UNKNOWN_ID" }));
+				REQUIRE_THROWS(testContainer.getCommandPrefs(throwawayCommandID));
 			}
 		}
 	}
