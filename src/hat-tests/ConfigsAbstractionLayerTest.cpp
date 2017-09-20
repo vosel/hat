@@ -15,7 +15,7 @@ using namespace std::string_literals;
 namespace {
 //this is a config file for commands. It contains all the possible combinations of commands definitions for 4 ENVs
 const auto commandsConfiguration = std::string{
-	"command_id\tcommand_category\tcommand_note\tcommand_description\tENV3\tENV2\tENV1\tENV0\n"   //command defined for:
+	hat::core::ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV() + "ENV3\tENV2\tENV1\tENV0\n"   //command defined for:
 	"hk0\tcategory\thk0_note\thk0_desc\t\t\n"                                                      //none of the ENVs
 	"hk1\tcategory\thk1_note\thk1_desc\t\t\t\thk1_keys_0\n"                                        //ENV0
 	"hk2\tcategory\thk2_note\thk2_desc\t\t\thk2_keys_1\t\n"                                        //ENV1
@@ -334,7 +334,7 @@ TEST_CASE("test that pages with no active buttons are not shown", "[configs_abst
 TEST_CASE("test that when there is one ENV, we don't show ENV selection page", "[configs_abstraction]")
 {
 	auto const singleENVCommandsConfiguration = std::string{
-		"command_id\tcommand_category\tcommand_note\tcommand_description\tSINGLE_ENV\n"
+		hat::core::ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV() + "SINGLE_ENV\n"
 		"hk0\tcategory\thk0_note\thk0_desc\thk0_keys\n" };
 
 	auto const PAGE_CAPTION = "test page"s;

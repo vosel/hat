@@ -25,6 +25,11 @@ std::vector<std::string> splitTheRow(std::string const & row, char delimiter, st
 std::vector<std::string> splitTheRow(std::string const & row, char delimiter);
 std::tuple<bool, size_t> idStringOk(std::string const & toTest);
 
+struct ConfigFilesKeywords
+{
+	static std::string const & mandatoryCellsNamesInCommandsCSV() { static std::string result{ "command_id\tcommand_category\tcommand_note\tcommand_description\t" }; return result; };
+};
+
 //This is a set of tests for the code, which handles the parsing of the data from hotkeys configuration csv.
 struct ParsedCsvRow
 {

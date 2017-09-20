@@ -30,7 +30,7 @@ template<> std::string toString(hat::core::ParsedCsvRow const & toDump)
 TEST_CASE("csv header parser testing", "[csv]")
 {
 	using namespace std::string_literals;
-	const auto requiredHeaderEntries("command_id\tcommand_category\tcommand_note\tcommand_description\t"s);
+	const auto & correctRequiredHeaderEntries = hat::core::ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV();
 	const auto brokenRequredHeaderEntries("command_id\tcommand_category\tcommand_notE\tcommand_description\t"s);; //the required entries should be an exact text match with the expectation
 	const auto correctToolsEntries0("Visual Studio\tEclipse\tAndroid Studio"s);
 	const auto correctToolsEntries1("Visual Studio\tEclipse\tAndroid Studio\t"s);
@@ -41,9 +41,9 @@ TEST_CASE("csv header parser testing", "[csv]")
 	const auto headerDescriptorRef1(headerDescriptorRef0);
 	const auto headerDescriptorRef2(hat::core::ParsedCsvRow({ "Visual Studio", "Eclipse" }));
 	REQUIRE(headerDescriptorRef1 != headerDescriptorRef2);
-	const auto correctHeaderString0(requiredHeaderEntries + correctToolsEntries0);
-	const auto correctHeaderString1(requiredHeaderEntries + correctToolsEntries1);
-	const auto correctHeaderString2(requiredHeaderEntries + correctToolsEntries2);
+	const auto correctHeaderString0(correctRequiredHeaderEntries + correctToolsEntries0);
+	const auto correctHeaderString1(correctRequiredHeaderEntries + correctToolsEntries1);
+	const auto correctHeaderString2(correctRequiredHeaderEntries + correctToolsEntries2);
 
 	const auto headerDescriptor0 = hat::core::ParsedCsvRow::parseHeaderString(correctHeaderString0);
 	const auto headerDescriptor1 = hat::core::ParsedCsvRow::parseHeaderString(correctHeaderString1);
@@ -53,7 +53,7 @@ TEST_CASE("csv header parser testing", "[csv]")
 	REQUIRE(headerDescriptorRef1 == headerDescriptor1);
 	REQUIRE(headerDescriptorRef2 == headerDescriptor2);
 
-	const auto incorrectHeaderString1(requiredHeaderEntries + incorrectToolsEntries);
+	const auto incorrectHeaderString1(correctRequiredHeaderEntries + incorrectToolsEntries);
 	const auto incorrectHeaderString2(brokenRequredHeaderEntries + correctToolsEntries0);
 	REQUIRE_THROWS(hat::core::ParsedCsvRow::parseHeaderString(incorrectHeaderString1)); //todo: add exception checker here (to make sure that the correct exception is thrown)
 	//TODO USE REQUIRE_THROWS_AS() here
@@ -131,7 +131,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 
 TEST_CASE("Commands config parsing", "[csv]")
 {
-	std::string configData{ "command_id\tcommand_category\tcommand_note\tcommand_description\tENV1\tENV2\tENV3"
+	std::string configData{ hat::core::ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV() + "ENV1\tENV2\tENV3"
 		"\nrun\tdebugger\trun\ttest_desc\t{F5}\t{F6}\t{F7}"
 		"\ndebug\tdebugger\tdebug\ttest_desc\t{F11}\t{F12}" };
 

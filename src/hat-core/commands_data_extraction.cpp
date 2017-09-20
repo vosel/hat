@@ -92,11 +92,9 @@ LINKAGE_RESTRICTION void ensureIdStringOk(std::string const & toTest)
 }
 LINKAGE_RESTRICTION auto ParsedCsvRow::parseHeaderString(std::string const & headerString)
 {
-	using namespace std::string_literals;
-	static const auto leadingRequiredCharacters("command_id\tcommand_category\tcommand_note\tcommand_description\t"s);
+	const auto & leadingRequiredCharacters = ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV();
 	if (headerString.find(leadingRequiredCharacters) != 0) {
-		static const auto errorMessage = "Error during parsing commands config. Header string should start with the specific elements: " + leadingRequiredCharacters;
-		throw std::runtime_error(errorMessage);
+		throw std::runtime_error("Error during parsing commands config. Header string should start with the specific elements: " + leadingRequiredCharacters);
 	}
 	const auto toParse(headerString.substr(leadingRequiredCharacters.size(), headerString.size()));
 
