@@ -95,21 +95,21 @@ namespace tool {
 		return ROBOT_NS::Window::IsAxEnabled();
 	}
 
-	Engine Engine::create(std::string const & commandsCSV, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
+	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & typingSequencesConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
 	{
 		std::fstream csvStream(commandsCSV.c_str());
 		if (!csvStream.is_open()) {
 			throw std::runtime_error("Could not find or open the commands config file: " + commandsCSV);
 		}
 
-		class MyHotkeyCombination: public core::HotkeyCombination
+		class MyHotkeyCombination: public core::SimpleHotkeyCombination
 		{
 			ROBOT_NS::KeyList m_sequence;
 			unsigned int m_keystrokes_delay;
 		public:
-			MyHotkeyCombination(std::string const & param, bool isEnabled, ROBOT_NS::KeyList const & sequence, unsigned int keystrokes_delay): core::HotkeyCombination(param, isEnabled), m_sequence(sequence), m_keystrokes_delay(keystrokes_delay) {
+			MyHotkeyCombination(std::string const & param, bool isEnabled, ROBOT_NS::KeyList const & sequence, unsigned int keystrokes_delay): core::SimpleHotkeyCombination(param, isEnabled), m_sequence(sequence), m_keystrokes_delay(keystrokes_delay) {
 			}
-			virtual void execute() override {
+			void execute() override {
 				if (enabled) {
 					auto keyboard = ROBOT_NS::Keyboard{};
 					keyboard.AutoDelay = m_keystrokes_delay;
@@ -125,7 +125,7 @@ namespace tool {
 		};
 
 
-		auto myLambda = [&] (std::string const & param, core::CommandID const & commandID) {
+		auto myLambda = [&] (std::string const & param, core::CommandID const & commandID, size_t evn_index) {
 			ROBOT_NS::KeyList sequence;
 			auto result = ROBOT_NS::Keyboard::Compile(param.c_str(), sequence);
 			if (!result) {
@@ -137,6 +137,15 @@ namespace tool {
 		};
 
 		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream, myLambda);
+
+		for (auto & typingSequencesConfig: typingSequencesConfigs) {
+			if (typingSequencesConfig.size() > 0) {
+				std::cout << "Starting to read typing sequences file '" << typingSequencesConfig << "'\n";
+				std::fstream typingsSequensesConfigStream(typingSequencesConfig.c_str()); 
+				commandsConfig.consumeTypingSequencesConfigFile(typingsSequensesConfigStream, myLambda);
+			}
+		}
+
 		std::fstream configStream(layoutConfig.c_str());
 		if (!configStream.is_open()) {
 			throw std::runtime_error("Could not find or open the layout config file: " + layoutConfig);

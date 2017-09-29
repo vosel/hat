@@ -57,7 +57,7 @@ public:
 	void layoutPageSwitched(tau::common::LayoutPageID const & pageID);
 
 	static bool canStickToWindows();
-	static Engine create(std::string const & commandsCSV, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyb_intervals);
+	static Engine create(std::string const & commandsCSV, std::vector<std::string> const & typingSequencesConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals);
 };
 
 } //namespace tool 

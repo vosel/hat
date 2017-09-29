@@ -19,21 +19,51 @@
 namespace hat {
 namespace core {
 
-LINKAGE_RESTRICTION Command::Command(std::string const & c_id, std::string const & c_desc, std::string const & c_gr, Command::HotkeysForDifferentEnvironments & hkeys) :
+LINKAGE_RESTRICTION bool AbstractHotkeyCombination::isEquivalentTo(AbstractHotkeyCombination const & other) const
+{
+	return isEquivalentTo_impl(other);
+}
+
+namespace {
+	bool checkSimpleEquivalence(AbstractHotkeyCombination const & first, AbstractHotkeyCombination const & second)
+	{
+		return (first.enabled == second.enabled) && (first.m_value == second.m_value);
+	}
+}
+
+LINKAGE_RESTRICTION bool SimpleHotkeyCombination::isEquivalentTo_impl(SimpleHotkeyCombination const & other) const
+{
+	return checkSimpleEquivalence(*this, other);
+}
+
+LINKAGE_RESTRICTION bool HotkeyCombinationCollection::isEquivalentTo_impl(HotkeyCombinationCollection const & other) const
+{
+	return checkSimpleEquivalence(*this, other);
+}
+
+LINKAGE_RESTRICTION Command::Command(std::string const & c_id, std::string const & c_desc, std::string const & c_gr, HotkeysForDifferentEnvironments const & hkeys) :
 	commandID(c_id),
 	commandNote(c_desc),
 	commandGroup(c_gr),
 	hotkeysForEnvironments(hkeys)
-{}
+{
+}
 
 LINKAGE_RESTRICTION bool Command::operator == (Command const & other) const
 {
-	return commandID == other.commandID;
+	return (commandID == other.commandID) &&
+		(commandNote == other.commandNote) &&
+		(commandGroup == other.commandGroup) && 
+		(hotkeysForEnvironments.size() == other.hotkeysForEnvironments.size()) &&
+		std::equal(
+			std::begin(hotkeysForEnvironments), std::end(hotkeysForEnvironments), std::begin(other.hotkeysForEnvironments),
+			[](HotkeysForDifferentEnvironments::value_type const & left, HotkeysForDifferentEnvironments::value_type const & right) {
+				return left->isEquivalentTo(*right);
+			});
 }
 
 LINKAGE_RESTRICTION Command Command::create(hat::core::ParsedCsvRow const & data, size_t customColumnsCount, HotkeyCombinationFactoryMethod hotkey_builder)
 {
-	using namespace std::string_literals;
 	auto c_id = data.m_customColumns[0];
 	auto c_gr = data.m_customColumns[1];
 	auto c_desc = data.m_customColumns[2];
@@ -41,35 +71,20 @@ LINKAGE_RESTRICTION Command Command::create(hat::core::ParsedCsvRow const & data
 	target.reserve(customColumnsCount);
 	for (size_t i = 0; i < customColumnsCount; ++i) {
 		if (i < data.m_customColumns.size() - 4) {
-			target.push_back(hotkey_builder(data.m_customColumns[i + 4], CommandID(c_id)));
+			target.push_back(hotkey_builder(data.m_customColumns[i + 4], CommandID(c_id), i));
 		} else {
-			target.push_back(std::make_shared<HotkeyCombination>("")); // just an empty disabled combination. Maybe will also generate it through hotkey_builder though
+			target.push_back(std::make_shared<SimpleHotkeyCombination>("", false)); // just an empty disabled combination. Maybe will also generate it through hotkey_builder though
 		}
 	}
 	return Command(c_id, c_desc, c_gr, target);
 }
 
-LINKAGE_RESTRICTION std::vector<std::string> splitTheRow(std::string const & row, char delimiter, std::function<bool(std::string const &, size_t, bool)> elementsVerificationFunctor)
-{
-	using namespace std::string_literals;
-	auto cellValue(""s);
-	std::vector<std::string> elements;
-	std::stringstream mystream(row);
-
-	while (std::getline(mystream, cellValue, delimiter)) {
-		if (elementsVerificationFunctor(cellValue, elements.size(), !mystream.eof())) {
-			elements.push_back(cellValue);
-		}
-	}
-	return elements;
-}
-
 LINKAGE_RESTRICTION std::vector<std::string> splitTheRow(std::string const & row, char delimiter)
 {
-	return splitTheRow(row, delimiter,
-		[](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
+	auto verificationLambda = [](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
 		return true;
-	});
+	};
+	return splitTheRow(row, delimiter, verificationLambda);
 }
 
 LINKAGE_RESTRICTION std::tuple<bool, size_t> idStringOk(std::string const & toTest) {
@@ -97,46 +112,62 @@ LINKAGE_RESTRICTION auto ParsedCsvRow::parseHeaderString(std::string const & hea
 		throw std::runtime_error("Error during parsing commands config. Header string should start with the specific elements: " + leadingRequiredCharacters);
 	}
 	const auto toParse(headerString.substr(leadingRequiredCharacters.size(), headerString.size()));
-
-	return ParsedCsvRow(splitTheRow(toParse, '\t', [](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
+	auto myLambda = [](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
 		if ((extractedString.size() == 0) && moreDataInStream) {
 			std::stringstream errorMessage;
 			errorMessage << "Empty attribute in the header string at position " << indexForString << " - this is not allowed";
 			throw std::runtime_error(errorMessage.str());
 		}
 		return true;
-	}));
+	};
+	return ParsedCsvRow(splitTheRow(toParse, '\t', myLambda));
 }
-
+namespace
+{
+	auto getCsvCommandDataRowElementsProcessor()
+	{
+		return [](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
+			if (indexForString == 0) {
+				if (extractedString.size() == 0) {
+					std::stringstream errormessage;
+					errormessage << "Each row should have a string id for reperenceing it.";
+					throw std::runtime_error(errormessage.str());
+				} else {
+					ensureIdStringOk(extractedString);
+				}
+			} else if (indexForString == 1) {
+				auto categoryStingCheck = idStringOk(extractedString);
+				if (!std::get<0>(categoryStingCheck)) {
+					std::stringstream errormessage;
+					errormessage << "Forbidden symbol in the category string value at position " << std::get<1>(categoryStingCheck) << ". The categoryID string: '" << extractedString << "'.";
+					throw std::runtime_error(errormessage.str());
+				}
+			} else if ((indexForString == 2) && (extractedString.size() == 0)) {
+				throw std::runtime_error("Each row should have a non-empty string note to associate with it.");
+			}
+			return true;
+		};
+	}
+}
 LINKAGE_RESTRICTION auto ParsedCsvRow::parseDataRowString(std::string const & rowString)
 {
-	auto rowElements = splitTheRow(rowString, '\t', [](std::string const & extractedString, size_t indexForString, bool moreDataInStream) -> bool {
-		if (indexForString == 0) {
-			if (extractedString.size() == 0) {
-				std::stringstream errormessage;
-				errormessage << "Each row should have a string id for reperenceing it.";
-				throw std::runtime_error(errormessage.str());
-			} else {
-				ensureIdStringOk(extractedString);
-			}
-		} else if (indexForString == 1) {
-			auto categoryStingCheck = idStringOk(extractedString);
-			if (!std::get<0>(categoryStingCheck)) {
-				std::stringstream errormessage;
-				errormessage << "Forbidden symbol in the category string value at position " << std::get<1>(categoryStingCheck) << ". The categoryID string: '" << extractedString << "'.";
-				throw std::runtime_error(errormessage.str());
-			}
-		} else if ((indexForString == 2) && (extractedString.size() == 0)) {
-			throw std::runtime_error("Each row should have a non-empty string note to associate with it.");
-		}
-		return true;
-	});
+	auto myLambda = getCsvCommandDataRowElementsProcessor();
+	auto rowElements = splitTheRow(rowString, '\t', myLambda);
 	return ParsedCsvRow(rowElements);
 }
 
 LINKAGE_RESTRICTION CommandsInfoContainer::CommandsContainer const & CommandsInfoContainer::getAllCommands() const
 {
 	return m_commandsList;
+}
+
+LINKAGE_RESTRICTION std::pair<bool, size_t> CommandsInfoContainer::getEnvironmentIndex(std::string const & environmentStringId) const
+{
+	auto begin = std::begin(m_environments);
+	auto end = std::end(m_environments);
+
+	auto foundElem = std::find(begin, end, environmentStringId);
+	return {foundElem != end, std::distance(begin, foundElem)};
 }
 
 LINKAGE_RESTRICTION CommandsInfoContainer::EnvsContainer const & CommandsInfoContainer::getEnvironments() const
@@ -167,11 +198,16 @@ LINKAGE_RESTRICTION bool CommandsInfoContainer::operator == (CommandsInfoContain
 }
 
 namespace {
-
-void processFileStream(std::istream & dataSource, size_t lineCounterStart, std::string const & fileTypeDescription, std::function<void (std::string const &)> dataProcessor) {
+template <typename LinesProcessingCallableObject>
+void processFileStream(std::istream & dataSource, size_t lineCounterStart, std::string const & fileTypeDescription, LinesProcessingCallableObject & dataProcessor, bool shouldClearByteOrderMarkOnFirstLine) {
 	auto tmpStr = std::string{};
 	size_t lineCount = lineCounterStart;
+	auto firstLine = true;
 	while (getLineFromFile(dataSource, tmpStr)) {
+		if (shouldClearByteOrderMarkOnFirstLine && firstLine) { // This is a special case
+			tmpStr = clearUTF8_byteOrderMark(tmpStr);
+			firstLine = false;
+		}
 		++lineCount;
 		try {
 			if (tmpStr.size() > 0) { // Empty lines are just skipped here
@@ -198,33 +234,169 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 	auto dataLineProcessor = [&result, &hotkey_builder](std::string const & lineToProcess) {
 		result.pushDataRow(ParsedCsvRow::parseDataRowString(lineToProcess), hotkey_builder);
 	};
-	processFileStream(dataSource, 1, "command", dataLineProcessor);
+	processFileStream(dataSource, 1, "command", dataLineProcessor, false);
 	return result;
+}
+
+namespace {
+
+// This is a simple class, which is used for processing the data lines read from the typing_sequences config file by the splitTheRow() funcion.
+// Currently there are 2 types of the data lines in this config files: simple and aggregative.
+// Simple rows hold the command as the robot's format string, the aggregative rows hold commands,
+// which are created from a set of another commands, which should be executed one after another.
+// Format of the row string:    <typeOfRow>\t<idOfCommand>\t<environments,for which the command is enabled>\t<command data>
+class MyTypingSequencesDataProcessor {
+	enum class TypeOfRow {
+		SIMPLE, AGGREGATE, UNKNOWN
+	};
+	TypeOfRow m_type = TypeOfRow::UNKNOWN;
+	CommandsInfoContainer const & m_targetContainerRef;
+	std::vector<std::string> m_accumulatedRawDataCells;
+	std::vector<char> m_shouldEnableCommandForGivenEnv;
+	std::string m_commandData;
+
+public:
+	MyTypingSequencesDataProcessor(CommandsInfoContainer const & targeContainerRef):m_targetContainerRef(targeContainerRef) {
+		m_shouldEnableCommandForGivenEnv.assign(
+			m_targetContainerRef.getEnvironments().size(), 0); // setting the flags to 'none of the environments enabled'
+	}
+
+	// This is a verification operator that gets called when an object of this class is passed to the splitTheRow() function.
+	bool operator()(std::string const & extractedString, size_t indexForString, bool moreDataInStream) {
+		if (indexForString == 0) {
+			if (extractedString == ConfigFilesKeywords::simpleTypingSeqCommand()) {
+				m_type = TypeOfRow::SIMPLE;
+			} else if (extractedString == ConfigFilesKeywords::aggregatedTypingSeqCommand()) {
+				m_type = TypeOfRow::AGGREGATE;
+			} else {
+				std::stringstream error;
+				error << "Unknown type of the command in the typing_sequences file: " << extractedString;
+				throw std::runtime_error(error.str());
+			}
+		} else if ((indexForString >= 1) && (indexForString <= 4)) {
+			if ((TypeOfRow::SIMPLE == m_type) || (TypeOfRow::AGGREGATE == m_type)) {
+				m_accumulatedRawDataCells.push_back(extractedString);
+				return getCsvCommandDataRowElementsProcessor()(extractedString, indexForString - 1, moreDataInStream);
+			} else {
+				throw std::runtime_error("Unsupported data type (TypeOfRow::AGGREGATE) - todo: add the support for it");
+			}
+		} else if (indexForString == 5) { //environments, for which this command is enabled
+			if (extractedString == "*") {
+				m_shouldEnableCommandForGivenEnv.assign(
+					m_targetContainerRef.getEnvironments().size(), 1); // setting the flags to 'all of the environments enabled'
+			} else {
+				auto elements = splitTheRow(extractedString, ',');
+				for (auto & environment : elements) {
+					auto indexFindResult = m_targetContainerRef.getEnvironmentIndex(environment);
+					if (indexFindResult.first) {
+						m_shouldEnableCommandForGivenEnv[indexFindResult.second] = 1; // enable the given environment
+					} else {
+						std::stringstream error;
+						error << "Unknown environment id in the typing_sequences file: " << environment
+							<< "\nWhole environments string: " << extractedString;
+						throw std::runtime_error(error.str());
+					}
+				}
+			}
+		} else if (indexForString == 6) {
+			m_commandData = extractedString;
+		} else {
+			std::stringstream error;
+			error << "Wrong format for the typing_sequences file's row: it has too many \\t symbols. There are some excessive symbols. Please check the documentation on the format of the data.";
+			throw std::runtime_error(error.str());
+		}
+		return true;
+	}
+
+	// This method determines the type of data, which should be pushed into the target container and passes the data to it in the needed format.
+	void storeAccumulatedDataTo(CommandsInfoContainer & target, HotkeyCombinationFactoryMethod hotkey_builder)
+	{
+		for (auto flag : m_shouldEnableCommandForGivenEnv) { // here we finish generating synthetic representation of the simple command (as if it was typed inside the csv_commands file), and then pass the data to the target container.
+			m_accumulatedRawDataCells.push_back((flag == 1) ? m_commandData : "");
+		}
+		if (TypeOfRow::SIMPLE == m_type) {
+			target.pushDataRow(hat::core::ParsedCsvRow(m_accumulatedRawDataCells), hotkey_builder);
+		} else if (TypeOfRow::AGGREGATE == m_type) {
+			target.pushDataRowForAggregatedCommand(
+				hat::core::ParsedCsvRow(m_accumulatedRawDataCells));
+		} else {
+			// Unreachable code
+			throw std::runtime_error("Unsupported data type. Note: this exception should never be thrown (the issue should've been detected earlier).");
+		}
+	}
+};
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::consumeTypingSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder)
+{
+	auto dataLineProcessor = [this, &hotkey_builder](std::string const & lineToProcess) {
+		MyTypingSequencesDataProcessor rowProcessor(*this);
+		auto rowElements = splitTheRow(lineToProcess, '\t', rowProcessor);
+		rowProcessor.storeAccumulatedDataTo(*this, hotkey_builder);
+	};
+	processFileStream(dataSource, 0, "typing sequences", dataLineProcessor, true);
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data)
 {
-	auto myLambda =  [] (std::string const & param, CommandID const & commandID) {
-		return std::make_shared<HotkeyCombination>(param);		
+	auto myLambda =  [] (std::string const & param, CommandID const & commandID, size_t env_index) {
+		return std::make_shared<SimpleHotkeyCombination>(param);		
 	};
 	pushDataRow(data, myLambda);
 }
 
-LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data, HotkeyCombinationFactoryMethod hotkey_builder)
+LINKAGE_RESTRICTION CommandID CommandsInfoContainer::ensureMandatoryCommandAttributesAreCorrect(hat::core::ParsedCsvRow const & data) const
 {
-	std::stringstream errorMessage;
 	using namespace std::string_literals;
-	if (data.m_customColumns.size() > m_environments.size() + 4) {
+	if (data.m_customColumns.size() > m_environments.size() + 4) { //TODO - refactoring: get rid of this magic number
+		std::stringstream errorMessage;
 		errorMessage << "Too much parameters for the row element. The max amount of parameters should be ('num of environments' + 4). (4 additional parameters are command id, group, button note and description)";
 		throw std::runtime_error(errorMessage.str());
 	}
 	auto commandID = CommandID{ data.m_customColumns[0] };
 	if (m_commandsMap.find(commandID) != m_commandsMap.end()) {
+		std::stringstream errorMessage;
 		errorMessage << "A duplicate command id found: '" << commandID.getValue() << "'. This is not allowed.";
 		throw std::runtime_error(errorMessage.str());
 	}
+	return commandID;
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data, HotkeyCombinationFactoryMethod hotkey_builder)
+{
+	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
+	storeCommandObject(commandID, Command::create(data, m_environments.size(), hotkey_builder));
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForAggregatedCommand(hat::core::ParsedCsvRow const & data)
+{
+	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
+	auto myLambda = [this](std::string const & commandStringRepresentation, CommandID const & commandID, size_t env_index) {
+		auto commandIDs = splitTheRow(commandStringRepresentation, ',');
+		auto commandsPointers = HotkeyCombinationCollection::CommandsSequence{};
+		auto should_enable = false;
+		for (auto & currentCommandID : commandIDs) {
+			auto key = CommandID{ currentCommandID };
+			if (hasCommandID(key)) {
+				auto commandPrefs = getCommandPrefs(key);
+				commandsPointers.push_back(commandPrefs.hotkeysForEnvironments[env_index].get());
+				should_enable = true;
+			} else {
+				std::stringstream errorMessage; 
+				errorMessage << "Could not find the command with id '" << currentCommandID << "' during generation of the 'aggregatedCommand' object.";
+				throw std::runtime_error(errorMessage.str());
+			}
+		}
+		return std::make_shared<HotkeyCombinationCollection>(
+			commandsPointers, commandStringRepresentation, should_enable);
+	};
+	storeCommandObject(commandID, Command::create(data, m_environments.size(), myLambda));
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::storeCommandObject(CommandID const & commandID, Command const & commandToStore)
+{
 	m_commandsMap.emplace(commandID, m_commandsList.size());
-	m_commandsList.push_back(Command::create(data, m_environments.size(), hotkey_builder));
+	m_commandsList.push_back(commandToStore);
 }
 
 LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, CommandsInfoContainer const & toDump)
@@ -236,7 +408,7 @@ LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, CommandsI
 	return target;
 }
 
-LINKAGE_RESTRICTION void HotkeyCombination::execute()
+LINKAGE_RESTRICTION void AbstractHotkeyCombination::execute()
 {
 	if (enabled) {
 		std::cout << "executing command:" << m_value << "\n";
@@ -244,7 +416,18 @@ LINKAGE_RESTRICTION void HotkeyCombination::execute()
 		std::cout << "Processing command request on disabled (for this environment) element. Nothing happened.\n";
 	}
 }
-
+LINKAGE_RESTRICTION void HotkeyCombinationCollection::execute()
+{
+	if (enabled) {
+		for (auto element : m_commandsToExecute) {
+			element->execute();
+			//TODO: there is a very subtle issue with this code.
+			// We have a command-line parameter for timeout between the each keystroke, 
+			// The way we do the execution of the keystrokes one after another here, this timeout will not be honored between consequent hotkey combinations.
+			// This is a rare issue, but it still has to be addressed
+		}
+	}
+}
 } //namespace core
 } //namespace hat
 

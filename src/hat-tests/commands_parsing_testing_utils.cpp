@@ -11,21 +11,51 @@
 namespace hat {
 namespace test {
 
-core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & configContents)
-{
-	std::stringstream toParse(configContents);
-	auto myLambda = [] (std::string const & param, core::CommandID const & commandID) {
-		return std::make_shared<core::HotkeyCombination>(param);
+auto getMockHotkeyCombinationProvider() {
+	return [] (std::string const & param, core::CommandID const & commandID, size_t env_index) {
+		return std::make_shared<core::SimpleHotkeyCombination>(param);
 	};
-
-	auto simpleResult = core::CommandsInfoContainer::parseConfigFile(toParse, myLambda);
-	std::string UTF8_BOM{char(0xEF), char(0xBB), char(0xBF)}; // TOOD: this constant is duplicated in several places. Maybe should put it in one place.
+};
+core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & configContents, std::function <core::CommandsInfoContainer (std::istream & srcStream)> objectProviderCallback)
+{	
+	std::stringstream toParse(configContents);
+	auto simpleResult = objectProviderCallback(toParse);
+	std::string UTF8_BOM{char(0xEF), char(0xBB), char(0xBF)}; // TODO: this constant is duplicated in several places. Maybe should put it in one place.
 	std::stringstream toParse_UTF8_BOM(UTF8_BOM + configContents);
-	auto utf8_result = core::CommandsInfoContainer::parseConfigFile(toParse_UTF8_BOM, myLambda);
-
+	auto utf8_result = objectProviderCallback(toParse_UTF8_BOM);
 	REQUIRE(utf8_result == simpleResult);
 	return simpleResult;
 }
+
+core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & configContents)
+{
+	return simulateParseConfigFileCall(configContents, [](std::istream & dataToProcess) {
+		return core::CommandsInfoContainer::parseConfigFile(dataToProcess, getMockHotkeyCombinationProvider());
+	});
+}
+
+//Note: the result returned by this function is not the same object, that was passed into it. The result object is copy-constructed inside this function.
+core::CommandsInfoContainer simulateAdditionalTypingSequencesConfigParsing(
+		std::string const & configContents, core::CommandsInfoContainer const & sourceCommandsContainerObject)
+{
+	return simulateParseConfigFileCall(configContents, [&](std::istream & dataToProcess) {
+		core::CommandsInfoContainer result = sourceCommandsContainerObject;
+		result.consumeTypingSequencesConfigFile(dataToProcess, getMockHotkeyCombinationProvider());
+		return result;
+	});
+}
+
+core::CommandsInfoContainer simulateSetOfCommandConfigFiles(
+	std::string const & mainCommandsConfig, std::vector<std::string> const & additionalTypingSequencesConfigs)
+{
+	auto result = simulateParseConfigFileCall(mainCommandsConfig);
+
+	for (auto & typingSequencesFileData : additionalTypingSequencesConfigs) {
+		result = simulateAdditionalTypingSequencesConfigParsing(typingSequencesFileData, result);
+	}
+	return result;
+}
+
 
 } // namespace test
 } // namespace hat
