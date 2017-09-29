@@ -118,7 +118,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 				for (auto const & current_commandID : commandIDs) {
 					auto elem = testContainer.getCommandPrefs(current_commandID);
 					THEN("Appropriate element is returned") {
-						elem.commandID == current_commandID;
+						REQUIRE(elem.commandID == current_commandID);
 					}
 				}
 			}
