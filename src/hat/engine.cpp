@@ -302,7 +302,7 @@ namespace tool {
 				auto navigationButtons = tau::layout_generation::EvenlySplitLayoutElementsContainer(false);
 				auto pushNavigationButton = [&](size_t destIndex)
 				{
-					if ((destIndex >= 0) && (destIndex < TOP_PAGES_COUNT)) {
+					if (destIndex < TOP_PAGES_COUNT) {
 						navigationButtons.push(
 							tau::layout_generation::ButtonLayoutElement().note(
 								hat::core::escapeRawUTF8_forJson(currentLayoutState.getPages()[destIndex].getNote()))
