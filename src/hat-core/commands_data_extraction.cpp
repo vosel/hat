@@ -270,7 +270,7 @@ public:
 				m_type = TypeOfRow::AGGREGATE;
 			} else {
 				std::stringstream error;
-				error << "Unknown type of the command in the typing_sequences file: " << extractedString;
+				error << "Unknown type of the command in the typing_sequences file. This is what is enterpreted as the command type string (it may be caused by use of space delimiter instead of <TAB>): \n'" << extractedString << "'";
 				throw std::runtime_error(error.str());
 			}
 		} else if ((indexForString >= 1) && (indexForString <= 4)) {
