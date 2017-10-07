@@ -10,8 +10,15 @@
 #include <iostream>
 #include "../external_dependencies/robot/Source/Keyboard.h"
 
+#ifdef HAT_WINDOWS_SCANCODES_SUPPORT
+#include <windows.h>
+#include "../external_dependencies/robot/Source/Timer.h"
+#endif
 namespace hat {
 namespace tool {
+#ifdef HAT_WINDOWS_SCANCODES_SUPPORT
+extern bool SHOULD_USE_SCANCODES;
+#endif
 	Engine::Engine(hat::core::LayoutUserInformation const & layoutInfo,
 		hat::core::CommandsInfoContainer const & commandsConfig, bool stickEnvToWindow, unsigned int keystrokes_delay) :
 		m_selectedEnvironment(0), isEnv_selected(false),
@@ -106,6 +113,41 @@ namespace tool {
 		{
 			ROBOT_NS::KeyList m_sequence;
 			unsigned int m_keystrokes_delay;
+			//little helper function, which abstracts away the keyboard simulation part (which can be platform-dependant)
+			void simulateSingleKeyboardInputEvent(ROBOT_NS::Keyboard & keyboard, std::pair<bool, ROBOT_NS::Key> const & keyboardEvent) {
+#ifdef HAT_WINDOWS_SCANCODES_SUPPORT
+				//optional behaviour:
+				if (SHOULD_USE_SCANCODES) {
+					bool isExtendedKey =
+						(keyboardEvent.second == VK_UP) ||
+						(keyboardEvent.second == VK_DOWN) ||
+						(keyboardEvent.second == VK_LEFT) ||
+						(keyboardEvent.second == VK_RIGHT) ||
+						(keyboardEvent.second == VK_HOME) ||
+						(keyboardEvent.second == VK_END) ||
+						(keyboardEvent.second == VK_PRIOR) ||
+						(keyboardEvent.second == VK_NEXT) ||
+						(keyboardEvent.second == VK_INSERT) ||
+						(keyboardEvent.second == VK_DELETE);
+
+					INPUT input = { 0 };
+					input.type = INPUT_KEYBOARD;
+					// Calculate scan-code from the Robot's virtual key code:
+					input.ki.wScan = MapVirtualKey(keyboardEvent.second, MAPVK_VK_TO_VSC);
+					input.ki.dwFlags = (keyboardEvent.first) ? 
+						KEYEVENTF_SCANCODE : (KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP);
+					if (isExtendedKey) {
+						input.ki.dwFlags |= KEYEVENTF_EXTENDEDKEY;
+					}
+					
+					SendInput (1, &input, sizeof (INPUT));
+					ROBOT_NS::Timer::Sleep (m_keystrokes_delay);
+					return;
+				}
+#endif
+				//default behaviour:
+				(keyboardEvent.first) ? keyboard.Press(keyboardEvent.second) : keyboard.Release(keyboardEvent.second);
+			}
 		public:
 			MyHotkeyCombination(std::string const & param, bool isEnabled, ROBOT_NS::KeyList const & sequence, unsigned int keystrokes_delay): core::SimpleHotkeyCombination(param, isEnabled), m_sequence(sequence), m_keystrokes_delay(keystrokes_delay) {
 			}
@@ -114,13 +156,9 @@ namespace tool {
 					auto keyboard = ROBOT_NS::Keyboard{};
 					keyboard.AutoDelay = m_keystrokes_delay;
 					for (auto const & key_event : m_sequence) {
-						if (key_event.first) {
-							keyboard.Press(key_event.second);
-						} else {
-							keyboard.Release(key_event.second);
-						}
+						simulateSingleKeyboardInputEvent(keyboard, key_event);
 					}
-				}				
+				}
 			}
 		};
 

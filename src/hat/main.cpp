@@ -13,7 +13,6 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
-
 namespace hat {
 namespace tool {
 std::string LAYOUT_CONFIG_PATH;
@@ -21,6 +20,10 @@ std::string COMMANDS_CONFIG_PATH;
 std::vector<std::string> TYPING_SEQUENCES_CFG_PATHS;
 bool STICK_ENV_TO_WINDOW = false;
 unsigned int KEYSTROKES_DELAY = 0;
+#ifdef HAT_WINDOWS_SCANCODES_SUPPORT
+extern bool SHOULD_USE_SCANCODES = false;
+#endif
+
 
 
 class MyEventsDispatcher : public tau::util::BasicEventsDispatcher
@@ -125,6 +128,10 @@ int main(int argc, char ** argv)
 	auto const LAYOUT_CFG = "layout";
 	auto const STICK_ENV_TO_WIN = "stickEnvToWindow";
 
+#ifdef HAT_WINDOWS_SCANCODES_SUPPORT
+	auto const USE_SCAN_CODES_FOR_KEYBOARD_EMULATION = "useScanCodes";
+#endif
+
 	namespace po = boost::program_options;
 	short port = 12345;
 	auto desc = po::options_description{ "Allowed options" };
@@ -137,6 +144,9 @@ int main(int argc, char ** argv)
 		(TYPING_SEQUENCES_CFG, po::value<std::vector<std::string>>()->multitoken()->composing(), "Filepath(s) to the configuration file(s) for the typing sequences (may be omitted). Multiple config files of this type are allowed.")
 		(LAYOUT_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the layout information")
 		(STICK_ENV_TO_WIN, "If set, the tool will require the user to specify a target window for each environment selected")
+#ifdef HAT_WINDOWS_SCANCODES_SUPPORT
+		(USE_SCAN_CODES_FOR_KEYBOARD_EMULATION, "If set, the tool will use scan-codes instead of virtual keycodes for keyboard emulation (windows only)")
+#endif
 		;
 
 	po::variables_map vm;
@@ -191,7 +201,11 @@ int main(int argc, char ** argv)
 			std::cout << "Could not enable the 'stick to window' option - it is not supported by current system. Ignoring the '" << STICK_ENV_TO_WIN << "' command line argument.\n";
 		}
 	}
-
+#ifdef HAT_WINDOWS_SCANCODES_SUPPORT
+	if (vm.count(USE_SCAN_CODES_FOR_KEYBOARD_EMULATION)) {
+		hat::tool::SHOULD_USE_SCANCODES = true;
+	}
+#endif
 	if (vm.count(PORT)) {
 		port = vm[PORT].as<short>();
 	}
