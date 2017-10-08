@@ -1,4 +1,4 @@
-#HAT - Hotkey Abstraction Tool #
+# HAT - Hotkey Abstraction Tool #
 
 `HAT` is a simple console tool, which allows to simulate keyboard input to the currently active window on desktop. It uses android phone or tablet as a controller. The keyboard commands are organized and stored in special configuration files, which are passed to the `HAT` program when it starts.
 
