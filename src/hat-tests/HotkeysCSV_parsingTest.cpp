@@ -140,7 +140,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 						<< environmentsForCommands[i] << "\t" << "someCommandSampleText" << "\n";
 				}
 
-				testContainer = hat::test::simulateAdditionalTypingSequencesConfigParsing(
+				testContainer = hat::test::simulateAdditionalInputSequencesConfigParsing(
 					simpleTypingSequencesStream.str(), testContainer);
 
 				THEN("Commands container's size should become 8.") {
@@ -157,7 +157,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 					std::vector<CommandID> const & listOfAggregatedCommands)
 				{
 					std::stringstream mystream;
-					mystream << hat::core::ConfigFilesKeywords::aggregatedTypingSeqCommand() << "\t"
+					mystream << hat::core::ConfigFilesKeywords::aggregatedSetOfCommands() << "\t"
 						<< idToUse.getValue() << commonMandatoryDataForCommandRows
 						<< allEnvironments << "\t";
 
@@ -173,7 +173,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 						{commandIDs[0], commandIDs[1], commandIDs[0], commandIDs[0]} 	//Note: we intentially use the same command id several times here. It is a situation, which is possible - we could want to repeat the same command several times.
 					);
 					testContainer =
-						hat::test::simulateAdditionalTypingSequencesConfigParsing(rowText, testContainer);
+						hat::test::simulateAdditionalInputSequencesConfigParsing(rowText, testContainer);
 					THEN("Commands container's size should become 9.") {
 						REQUIRE(testContainer.getAllCommands().size() == 9);
 					}
@@ -183,7 +183,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 							commandsAggregatorsIDs[1], 
 							{ commandIDs[0], commandsAggregatorsIDs[0]}
 						);
-						testContainer = hat::test::simulateAdditionalTypingSequencesConfigParsing(
+						testContainer = hat::test::simulateAdditionalInputSequencesConfigParsing(
 							rowText, testContainer);
 						THEN("Commands container's size should become 10.") {
 							REQUIRE(testContainer.getAllCommands().size() == 10);
@@ -196,7 +196,7 @@ SCENARIO("csv data presentation tests", "[csv]")
 						);
 						THEN("Exception is thrown.") {
 							REQUIRE_THROWS(
-								hat::test::simulateAdditionalTypingSequencesConfigParsing(
+								hat::test::simulateAdditionalInputSequencesConfigParsing(
 									rowText, testContainer);
 							);
 						}
@@ -224,7 +224,7 @@ TEST_CASE("Commands config parsing", "[csv]")
 	REQUIRE(referenceObject == testObject);
 }
 
-SCENARIO("Equivalence of commands_config and typing_sequences files", "[csv_commands vs typing_sequences]")
+SCENARIO("Equivalence of commands_config and input sequences files", "[csv_commands vs input sequences]")
 {
 	GIVEN ("A set of test configuration data") {
 		std::vector<std::string> commands_ids = {
@@ -274,7 +274,7 @@ SCENARIO("Equivalence of commands_config and typing_sequences files", "[csv_comm
 			{"{F5}"s, {0, 1, 1}},
 			{"{F6}"s, {0, 0, 0}}
 		};
-		WHEN ("a normal csv_config and typing_sequences configuration files with this data are used as source for the CommandsInfoContainer objects") {
+		WHEN ("a normal csv_config and input sequences configuration files with this data are used as source for the CommandsInfoContainer objects") {
 			std::stringstream commonCsvHeader_stream;
 			commonCsvHeader_stream << hat::core::ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV();
 			for (auto & env : environments) { commonCsvHeader_stream << env << "\t";}
@@ -295,9 +295,9 @@ SCENARIO("Equivalence of commands_config and typing_sequences files", "[csv_comm
 				}
 			}
 
-			std::stringstream typingSequencesConfigData;
+			std::stringstream inputSequencesConfigData;
 			for (size_t i = 0; i < commands_ids.size(); ++i) {
-				typingSequencesConfigData << hat::core::ConfigFilesKeywords::simpleTypingSeqCommand() << "\t"
+				inputSequencesConfigData << hat::core::ConfigFilesKeywords::simpleTypingSeqCommand() << "\t"
 					<< commands_ids[i] << "\t"
 					<< commands_categories[i] << "\t"
 					<< commands_notes[i] << "\t"
@@ -314,21 +314,21 @@ SCENARIO("Equivalence of commands_config and typing_sequences files", "[csv_comm
 							shouldAddComma = true;
 						}
 					}
-					typingSequencesConfigData << environmentsStringBuilder.str();
+					inputSequencesConfigData << environmentsStringBuilder.str();
 				}
-				typingSequencesConfigData << "\t" << commands_data_for_environments[i].first << "\n";
+				inputSequencesConfigData << "\t" << commands_data_for_environments[i].first << "\n";
 			}
 
 			THEN ("the resulting objects loaded from these configs should be equivalent") {
 				auto testObject0 = hat::test::simulateParseConfigFileCall(csvConfigData.str());
-				auto testObject1 = hat::test::simulateSetOfCommandConfigFiles(commonCsvHeader, { typingSequencesConfigData.str() });
+				auto testObject1 = hat::test::simulateSetOfCommandConfigFiles(commonCsvHeader, { inputSequencesConfigData.str() });
 				REQUIRE(testObject0 == testObject1);
 			}
 		}
 	}
 }
 
-TEST_CASE("Order of the environmens in typing_sequences configuration file")
+TEST_CASE("Order of the environmens in input sequences configuration file")
 {
 	std::string const commonHeader {hat::core::ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV() + "ENV0\tENV1\tENV2"s};
 	auto runTestingOfEquivalencesAndDifferences = [&commonHeader](
@@ -389,21 +389,21 @@ TEST_CASE("Order of the environmens in typing_sequences configuration file")
 		{"ENV0,ENV1"s, "ENV0"s, "ENV1"s, "ENV2"s, ""s});
 }
 
-TEST_CASE("Misspelled environment identifier in typing_sequence configuration files")
+TEST_CASE("Misspelled environment identifier in input sequences configuration files")
 {
 	//This is a very simple test case to ensure that the situations with duplicated/misspelled environment IDs are pointed out by the system.
 	std::string const csv_header {hat::core::ConfigFilesKeywords::mandatoryCellsNamesInCommandsCSV() + "ENV0\tENV1\tENV2"s};
 	auto testRunner = [&csv_header](std::string const & wrongEnvironmentsString, std::string const & correctedEnvironmentsString)
 	{
-		std::string const typing_sequence_element_beginning {
+		std::string const input_sequence_element_beginning {
 			hat::core::ConfigFilesKeywords::simpleTypingSeqCommand() + 
 				"\ttestCommandID\ttestCommandCategory\ttest note\ttest desc\t"
 		};
-		std::string const typing_sequence_element_ending {"\ttestData"};
+		std::string const input_sequence_element_ending {"\ttestData"};
 		std::string wrongTypingSeqLine = 
-			typing_sequence_element_beginning + wrongEnvironmentsString + typing_sequence_element_ending;
+			input_sequence_element_beginning + wrongEnvironmentsString + input_sequence_element_ending;
 		std::string correctedTypingSeqLine = 
-			typing_sequence_element_beginning + correctedEnvironmentsString + typing_sequence_element_ending;
+			input_sequence_element_beginning + correctedEnvironmentsString + input_sequence_element_ending;
 		REQUIRE_THROWS(hat::test::simulateSetOfCommandConfigFiles(csv_header, {wrongTypingSeqLine}));
 		REQUIRE_NOTHROW(hat::test::simulateSetOfCommandConfigFiles(csv_header, {correctedTypingSeqLine}));
 	};

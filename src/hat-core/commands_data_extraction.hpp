@@ -52,7 +52,7 @@ struct ConfigFilesKeywords
 	static std::string const & mandatoryCellsNamesInCommandsCSV() { static std::string result{ "command_id\tcommand_category\tcommand_note\tcommand_description\t" }; return result; };
 	static std::string const & simpleTypingSeqCommand()     { static std::string const result{ "simpleTypingJob" }; return result; };
 	static std::string const & simpleMouseInputCommand()    { static std::string const result{ "mouseInput" }; return result; };
-	static std::string const & aggregatedTypingSeqCommand() { static std::string const result{ "commandSequence" }; return result; };
+	static std::string const & aggregatedSetOfCommands() { static std::string const result{ "commandSequence" }; return result; };
 	struct MouseButtonTypes {
 		static std::string const & LeftButton() { static std::string const result{ "L" }; return result; };
 		static std::string const & RightButton() { static std::string const result{ "R" }; return result; };
@@ -76,67 +76,67 @@ struct ParsedCsvRow
 
 struct SimpleHotkeyCombination;
 struct SimpleMouseInput;
-struct HotkeyCombinationCollection;
-struct AbstractHotkeyCombination
+struct InputSequencesCollection;
+struct AbstractSimulatedUserInput
 {
-	std::string m_value; //TODO: replace with the compiled version of the hotkey
+	std::string m_value; //text representation of the operation (generally, as it is written down in the config file)
 	bool const enabled;
 	//todo: generate this class's objects by the static calls
-	AbstractHotkeyCombination(std::string const & value) : m_value(value), enabled(value.size() > 0) {};
-	AbstractHotkeyCombination(std::string const & value, bool enable) : m_value(value), enabled(enable) {};
+	AbstractSimulatedUserInput(std::string const & value) : m_value(value), enabled(value.size() > 0) {};
+	AbstractSimulatedUserInput(std::string const & value, bool enable) : m_value(value), enabled(enable) {};
 	virtual void execute();
-	bool isEquivalentTo(AbstractHotkeyCombination const & other) const;
+	bool isEquivalentTo(AbstractSimulatedUserInput const & other) const;
 
 	//TODO: clean up the comparison code. It should not be visible from public interface:
-	virtual bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const = 0;
+	virtual bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const = 0;
 	virtual bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const = 0;
 	virtual bool isEquivalentTo_impl(SimpleMouseInput const & other) const  = 0;
-	virtual bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const = 0;
+	virtual bool isEquivalentTo_impl(InputSequencesCollection const & other) const = 0;
 };
 
-struct SimpleHotkeyCombination : public AbstractHotkeyCombination
+struct SimpleHotkeyCombination : public AbstractSimulatedUserInput
 {	
-	SimpleHotkeyCombination(std::string const & value) : AbstractHotkeyCombination(value) {};
-	SimpleHotkeyCombination(std::string const & value, bool enable) : AbstractHotkeyCombination(value, enable) {};
-	void execute() override { AbstractHotkeyCombination::execute(); };
+	SimpleHotkeyCombination(std::string const & value) : AbstractSimulatedUserInput(value) {};
+	SimpleHotkeyCombination(std::string const & value, bool enable) : AbstractSimulatedUserInput(value, enable) {};
+	void execute() override { AbstractSimulatedUserInput::execute(); };
 
-	bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const override { return other.isEquivalentTo_impl(*this); };
+	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override;
 	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
-	bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const override {return false;};
+	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override {return false;};
 };
 
-struct SimpleMouseInput : public AbstractHotkeyCombination
+struct SimpleMouseInput : public AbstractSimulatedUserInput
 {
-	SimpleMouseInput(std::string const & value) : AbstractHotkeyCombination(value) {};
-	SimpleMouseInput(std::string const & value, bool enable) : AbstractHotkeyCombination(value, enable) {};
-	void execute() override { AbstractHotkeyCombination::execute(); };
+	SimpleMouseInput(std::string const & value) : AbstractSimulatedUserInput(value) {};
+	SimpleMouseInput(std::string const & value, bool enable) : AbstractSimulatedUserInput(value, enable) {};
+	void execute() override { AbstractSimulatedUserInput::execute(); };
 	 
-	bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const override { return other.isEquivalentTo_impl(*this); };
+	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
 	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override;
-	bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const override {return false;};
+	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override {return false;};
 };
 
 
-struct HotkeyCombinationCollection : public AbstractHotkeyCombination
+struct InputSequencesCollection : public AbstractSimulatedUserInput
 {
-	typedef std::vector<AbstractHotkeyCombination *> CommandsSequence;
+	typedef std::vector<AbstractSimulatedUserInput *> CommandsSequence;
 private:
 	CommandsSequence const m_commandsToExecute;
 public:
-	HotkeyCombinationCollection(CommandsSequence const & commandsToExecute, std::string const & value) : AbstractHotkeyCombination(value), m_commandsToExecute(commandsToExecute) {};
-	HotkeyCombinationCollection(CommandsSequence const & commandsToExecute, std::string const & value, bool enable) : AbstractHotkeyCombination(value, enable), m_commandsToExecute(commandsToExecute) {};
+	InputSequencesCollection(CommandsSequence const & commandsToExecute, std::string const & value) : AbstractSimulatedUserInput(value), m_commandsToExecute(commandsToExecute) {};
+	InputSequencesCollection(CommandsSequence const & commandsToExecute, std::string const & value, bool enable) : AbstractSimulatedUserInput(value, enable), m_commandsToExecute(commandsToExecute) {};
 	void execute() override;
 
-	bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const override { return other.isEquivalentTo_impl(*this); };
+	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
 	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
-	bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const override;
+	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override;
 };
 
-typedef std::function<std::shared_ptr<AbstractHotkeyCombination>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> HotkeyCombinationFactoryMethod;
-typedef std::function<std::shared_ptr<AbstractHotkeyCombination>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> MouseInputsFactoryMethod;
+typedef std::function<std::shared_ptr<AbstractSimulatedUserInput>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> HotkeyCombinationFactoryMethod;
+typedef std::function<std::shared_ptr<AbstractSimulatedUserInput>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> MouseInputsFactoryMethod;
 
 struct Command
 {
@@ -144,7 +144,7 @@ struct Command
 	std::string const commandNote;
 	std::string const commandGroup;
 
-	typedef std::vector<std::shared_ptr<AbstractHotkeyCombination> > HotkeysForDifferentEnvironments;
+	typedef std::vector<std::shared_ptr<AbstractSimulatedUserInput> > HotkeysForDifferentEnvironments;
 	HotkeysForDifferentEnvironments hotkeysForEnvironments;
 
 	Command(std::string const & c_id, std::string const & c_desc, std::string const & c_gr, HotkeysForDifferentEnvironments const & hkeys);
@@ -185,7 +185,7 @@ public:
 	std::pair<bool, size_t> getEnvironmentIndex(std::string const & environmentStringId) const;
 	CommandsContainer const & getAllCommands() const;
 	static CommandsInfoContainer parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
-	void consumeTypingSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder);
+	void consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder);
 	bool operator == (CommandsInfoContainer const  & other) const;
 };
 

@@ -143,7 +143,7 @@ extern bool SHOULD_USE_SCANCODES;
 			return std::make_pair(buttonType, coord);
 		}
 	}
-	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & typingSequencesConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
+	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
 	{
 		std::fstream csvStream(commandsCSV.c_str());
 		if (!csvStream.is_open()) {
@@ -246,11 +246,11 @@ extern bool SHOULD_USE_SCANCODES;
 
 		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream, lambdaForKeyboardInputObjectsCreation);
 
-		for (auto & typingSequencesConfig: typingSequencesConfigs) {
-			if (typingSequencesConfig.size() > 0) {
-				std::cout << "Starting to read typing sequences file '" << typingSequencesConfig << "'\n";
-				std::fstream typingsSequensesConfigStream(typingSequencesConfig.c_str()); 
-				commandsConfig.consumeTypingSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation);
+		for (auto & inputSequencesConfig: inputSequencesConfigs) {
+			if (inputSequencesConfig.size() > 0) {
+				std::cout << "Starting to read input sequences file '" << inputSequencesConfig << "'\n";
+				std::fstream typingsSequensesConfigStream(inputSequencesConfig.c_str()); 
+				commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation);
 			}
 		}
 

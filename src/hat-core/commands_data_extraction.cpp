@@ -19,13 +19,13 @@
 namespace hat {
 namespace core {
 
-LINKAGE_RESTRICTION bool AbstractHotkeyCombination::isEquivalentTo(AbstractHotkeyCombination const & other) const
+LINKAGE_RESTRICTION bool AbstractSimulatedUserInput::isEquivalentTo(AbstractSimulatedUserInput const & other) const
 {
 	return isEquivalentTo_impl(other);
 }
 
 namespace {
-	bool checkSimpleEquivalence(AbstractHotkeyCombination const & first, AbstractHotkeyCombination const & second)
+	bool checkSimpleEquivalence(AbstractSimulatedUserInput const & first, AbstractSimulatedUserInput const & second)
 	{
 		return (first.enabled == second.enabled) && (first.m_value == second.m_value);
 	}
@@ -41,7 +41,7 @@ LINKAGE_RESTRICTION bool SimpleMouseInput::isEquivalentTo_impl(SimpleMouseInput 
 	return checkSimpleEquivalence(*this, other);
 }
 
-LINKAGE_RESTRICTION bool HotkeyCombinationCollection::isEquivalentTo_impl(HotkeyCombinationCollection const & other) const
+LINKAGE_RESTRICTION bool InputSequencesCollection::isEquivalentTo_impl(InputSequencesCollection const & other) const
 {
 	return checkSimpleEquivalence(*this, other);
 }
@@ -245,12 +245,12 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 
 namespace {
 
-// This is a simple class, which is used for processing the data lines read from the typing_sequences config file by the splitTheRow() funcion.
+// This is a simple class, which is used for processing the data lines read from the input_sequences config file by the splitTheRow() funcion.
 // Currently there are 2 types of the data lines in this config files: simple and aggregative.
 // Simple rows hold the command as the robot's format string, the aggregative rows hold commands,
 // which are created from a set of another commands, which should be executed one after another.
 // Format of the row string:    <typeOfRow>\t<idOfCommand>\t<environments,for which the command is enabled>\t<command data>
-class MyTypingSequencesDataProcessor {
+class MyInputSequencesDataProcessor {
 	enum class TypeOfRow {
 		SIMPLE_KEYBOARD_INPUT, SIMPLE_MOUSE_INPUT, AGGREGATE, UNKNOWN
 	};
@@ -261,7 +261,7 @@ class MyTypingSequencesDataProcessor {
 	std::string m_commandData;
 
 public:
-	MyTypingSequencesDataProcessor(CommandsInfoContainer const & targeContainerRef):m_targetContainerRef(targeContainerRef) {
+	MyInputSequencesDataProcessor(CommandsInfoContainer const & targeContainerRef):m_targetContainerRef(targeContainerRef) {
 		m_shouldEnableCommandForGivenEnv.assign(
 			m_targetContainerRef.getEnvironments().size(), 0); // setting the flags to 'none of the environments enabled'
 	}
@@ -273,11 +273,11 @@ public:
 				m_type = TypeOfRow::SIMPLE_KEYBOARD_INPUT;
 			} else if (extractedString == ConfigFilesKeywords::simpleMouseInputCommand()) {
 				m_type = TypeOfRow::SIMPLE_MOUSE_INPUT;
-			} else if (extractedString == ConfigFilesKeywords::aggregatedTypingSeqCommand()) {
+			} else if (extractedString == ConfigFilesKeywords::aggregatedSetOfCommands()) {
 				m_type = TypeOfRow::AGGREGATE;
 			} else {
 				std::stringstream error;
-				error << "Unknown type of the command in the typing_sequences file. This is what is enterpreted as the command type string (it may be caused by use of space delimiter instead of <TAB>): \n'" << extractedString << "'";
+				error << "Unknown type of the command in the input sequences file. This is what is enterpreted as the command type string (it may be caused by use of space delimiter instead of <TAB>): \n'" << extractedString << "'";
 				throw std::runtime_error(error.str());
 			}
 		} else if ((indexForString >= 1) && (indexForString <= 4)) {
@@ -299,7 +299,7 @@ public:
 						m_shouldEnableCommandForGivenEnv[indexFindResult.second] = 1; // enable the given environment
 					} else {
 						std::stringstream error;
-						error << "Unknown environment id in the typing_sequences file: " << environment
+						error << "Unknown environment id in the input sequences file: " << environment
 							<< "\nWhole environments string: " << extractedString;
 						throw std::runtime_error(error.str());
 					}
@@ -309,7 +309,7 @@ public:
 			m_commandData = extractedString;
 		} else {
 			std::stringstream error;
-			error << "Wrong format for the typing_sequences file's row: it has too many \\t symbols. There are some excessive symbols. Please check the documentation on the format of the data.";
+			error << "Wrong format for the input sequences file's row: it has too many \\t symbols. There are some excessive symbols. Please check the documentation on the format of the data.";
 			throw std::runtime_error(error.str());
 		}
 		return true;
@@ -337,14 +337,14 @@ public:
 };
 }
 
-LINKAGE_RESTRICTION void CommandsInfoContainer::consumeTypingSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder)
+LINKAGE_RESTRICTION void CommandsInfoContainer::consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder)
 {
 	auto dataLineProcessor = [this, &hotkey_builder, &mouse_inputs_builder](std::string const & lineToProcess) {
-		MyTypingSequencesDataProcessor rowProcessor(*this);
+		MyInputSequencesDataProcessor rowProcessor(*this);
 		auto rowElements = splitTheRow(lineToProcess, '\t', rowProcessor);
 		rowProcessor.storeAccumulatedDataTo(*this, hotkey_builder, mouse_inputs_builder);
 	};
-	processFileStream(dataSource, 0, "typing sequences", dataLineProcessor, true);
+	processFileStream(dataSource, 0, "input sequences", dataLineProcessor, true);
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data)
@@ -389,7 +389,7 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForAggregatedCommand(
 	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
 	auto myLambda = [this](std::string const & commandStringRepresentation, CommandID const & commandID, size_t env_index) {
 		auto commandIDs = splitTheRow(commandStringRepresentation, ',');
-		auto commandsPointers = HotkeyCombinationCollection::CommandsSequence{};
+		auto commandsPointers = InputSequencesCollection::CommandsSequence{};
 		auto should_enable = false;
 		for (auto & currentCommandID : commandIDs) {
 			auto key = CommandID{ currentCommandID };
@@ -403,7 +403,7 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForAggregatedCommand(
 				throw std::runtime_error(errorMessage.str());
 			}
 		}
-		return std::make_shared<HotkeyCombinationCollection>(
+		return std::make_shared<InputSequencesCollection>(
 			commandsPointers, commandStringRepresentation, should_enable);
 	};
 	storeCommandObject(commandID, Command::create(data, m_environments.size(), myLambda));
@@ -424,7 +424,7 @@ LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, CommandsI
 	return target;
 }
 
-LINKAGE_RESTRICTION void AbstractHotkeyCombination::execute()
+LINKAGE_RESTRICTION void AbstractSimulatedUserInput::execute()
 {
 	if (enabled) {
 		std::cout << "executing command:" << m_value << "\n";
@@ -432,7 +432,7 @@ LINKAGE_RESTRICTION void AbstractHotkeyCombination::execute()
 		std::cout << "Processing command request on disabled (for this environment) element. Nothing happened.\n";
 	}
 }
-LINKAGE_RESTRICTION void HotkeyCombinationCollection::execute()
+LINKAGE_RESTRICTION void InputSequencesCollection::execute()
 {
 	if (enabled) {
 		for (auto element : m_commandsToExecute) {

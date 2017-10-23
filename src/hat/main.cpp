@@ -17,7 +17,7 @@ namespace hat {
 namespace tool {
 std::string LAYOUT_CONFIG_PATH;
 std::string COMMANDS_CONFIG_PATH;
-std::vector<std::string> TYPING_SEQUENCES_CFG_PATHS;
+std::vector<std::string> INPUT_SEQUENCES_CFG_PATHS;
 bool STICK_ENV_TO_WINDOW = false;
 unsigned int KEYSTROKES_DELAY = 0;
 #ifdef HAT_WINDOWS_SCANCODES_SUPPORT
@@ -84,7 +84,7 @@ private:
 	bool reloadConfigs()
 	{
 		try {
-			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, TYPING_SEQUENCES_CFG_PATHS, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
+			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
 		} catch (std::runtime_error & e) {
 			std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
 			return false;
@@ -102,7 +102,7 @@ bool checkConfigsForErrors() {
 
 	try {
 		std::cout << "Checking configuration files for errors ...\n";
-		Engine::create(COMMANDS_CONFIG_PATH, TYPING_SEQUENCES_CFG_PATHS, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
+		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
 		std::cout << "\t... done.\n";
 	} catch (std::runtime_error & e) {
 		std::cerr << "\n --- Error during reading of the config files at startup:\n" << e.what() << "\n";
@@ -124,7 +124,7 @@ int main(int argc, char ** argv)
 	auto const PORT = "port";
 	auto const KEYB_DELAY = "keysDelay";
 	auto const COMMANDS_CFG = "commands";
-	auto const TYPING_SEQUENCES_CFG = "typing_sequences";
+	auto const INPUT_SEQUENCES_CFG = "input_sequences";
 	auto const LAYOUT_CFG = "layout";
 	auto const STICK_ENV_TO_WIN = "stickEnvToWindow";
 
@@ -141,7 +141,7 @@ int main(int argc, char ** argv)
 		(PORT, po::value<short>(), "Set the server listen port")
 		(KEYB_DELAY, po::value<unsigned int>(), "delay interval between simulated keystrokes in milliseconds (default is 0 - no delays)")
 		(COMMANDS_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the information about commands configurations for each of the environments")
-		(TYPING_SEQUENCES_CFG, po::value<std::vector<std::string>>()->multitoken()->composing(), "Filepath(s) to the configuration file(s) for the typing sequences (may be omitted). Multiple config files of this type are allowed.")
+		(INPUT_SEQUENCES_CFG, po::value<std::vector<std::string>>()->multitoken()->composing(), "Filepath(s) to the configuration file(s) for the input sequences (may be omitted). Multiple config files of this type are allowed.")
 		(LAYOUT_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the layout information")
 		(STICK_ENV_TO_WIN, "If set, the tool will require the user to specify a target window for each environment selected")
 #ifdef HAT_WINDOWS_SCANCODES_SUPPORT
@@ -176,11 +176,11 @@ int main(int argc, char ** argv)
 		return 3;
 	}
 
-	if (vm.count(TYPING_SEQUENCES_CFG)) {
-		hat::tool::TYPING_SEQUENCES_CFG_PATHS = vm[TYPING_SEQUENCES_CFG].as<std::vector<std::string>>();
+	if (vm.count(INPUT_SEQUENCES_CFG)) {
+		hat::tool::INPUT_SEQUENCES_CFG_PATHS = vm[INPUT_SEQUENCES_CFG].as<std::vector<std::string>>();
 		
-		std::cout << "Typing sequences config file(s): [";
-		for (auto & configPath : hat::tool::TYPING_SEQUENCES_CFG_PATHS) {
+		std::cout << "Input sequences config file(s): [";
+		for (auto & configPath : hat::tool::INPUT_SEQUENCES_CFG_PATHS) {
 			std::cout << '\'' << configPath << "\', ";
 		}
 		std::cout << "]\n";

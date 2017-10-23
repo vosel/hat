@@ -42,12 +42,12 @@ core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & conf
 }
 
 //Note: the result returned by this function is not the same object, that was passed into it. The result object is copy-constructed inside this function.
-core::CommandsInfoContainer simulateAdditionalTypingSequencesConfigParsing(
+core::CommandsInfoContainer simulateAdditionalInputSequencesConfigParsing(
 		std::string const & configContents, core::CommandsInfoContainer const & sourceCommandsContainerObject)
 {
 	return simulateParseConfigFileCall(configContents, [&](std::istream & dataToProcess) {
 		core::CommandsInfoContainer result = sourceCommandsContainerObject;
-		result.consumeTypingSequencesConfigFile(dataToProcess, getMockHotkeyCombinationProvider(), getMockMouseInputsProvider());
+		result.consumeInputSequencesConfigFile(dataToProcess, getMockHotkeyCombinationProvider(), getMockMouseInputsProvider());
 		return result;
 	});
 }
@@ -58,7 +58,7 @@ core::CommandsInfoContainer simulateSetOfCommandConfigFiles(
 	auto result = simulateParseConfigFileCall(mainCommandsConfig);
 
 	for (auto & typingSequencesFileData : additionalTypingSequencesConfigs) {
-		result = simulateAdditionalTypingSequencesConfigParsing(typingSequencesFileData, result);
+		result = simulateAdditionalInputSequencesConfigParsing(typingSequencesFileData, result);
 	}
 	return result;
 }
