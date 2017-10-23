@@ -51,7 +51,15 @@ struct ConfigFilesKeywords
 {
 	static std::string const & mandatoryCellsNamesInCommandsCSV() { static std::string result{ "command_id\tcommand_category\tcommand_note\tcommand_description\t" }; return result; };
 	static std::string const & simpleTypingSeqCommand()     { static std::string const result{ "simpleTypingJob" }; return result; };
+	static std::string const & simpleMouseInputCommand()    { static std::string const result{ "mouseInput" }; return result; };
 	static std::string const & aggregatedTypingSeqCommand() { static std::string const result{ "commandSequence" }; return result; };
+	struct MouseButtonTypes {
+		static std::string const & LeftButton() { static std::string const result{ "L" }; return result; };
+		static std::string const & RightButton() { static std::string const result{ "R" }; return result; };
+		static std::string const & MiddleButton() { static std::string const result{ "M" }; return result; };
+		static std::string const & X1Button() { static std::string const result{ "X1" }; return result; };
+		static std::string const & X2Button() { static std::string const result{ "X2" }; return result; };
+	};
 };
 
 //This is a set of tests for the code, which handles the parsing of the data from hotkeys configuration csv.
@@ -67,6 +75,7 @@ struct ParsedCsvRow
 };
 
 struct SimpleHotkeyCombination;
+struct SimpleMouseInput;
 struct HotkeyCombinationCollection;
 struct AbstractHotkeyCombination
 {
@@ -81,6 +90,7 @@ struct AbstractHotkeyCombination
 	//TODO: clean up the comparison code. It should not be visible from public interface:
 	virtual bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const = 0;
 	virtual bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const = 0;
+	virtual bool isEquivalentTo_impl(SimpleMouseInput const & other) const  = 0;
 	virtual bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const = 0;
 };
 
@@ -92,8 +102,22 @@ struct SimpleHotkeyCombination : public AbstractHotkeyCombination
 
 	bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override;
+	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
 	bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const override {return false;};
 };
+
+struct SimpleMouseInput : public AbstractHotkeyCombination
+{
+	SimpleMouseInput(std::string const & value) : AbstractHotkeyCombination(value) {};
+	SimpleMouseInput(std::string const & value, bool enable) : AbstractHotkeyCombination(value, enable) {};
+	void execute() override { AbstractHotkeyCombination::execute(); };
+	 
+	bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const override { return other.isEquivalentTo_impl(*this); };
+	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
+	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override;
+	bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const override {return false;};
+};
+
 
 struct HotkeyCombinationCollection : public AbstractHotkeyCombination
 {
@@ -107,10 +131,12 @@ public:
 
 	bool isEquivalentTo_impl(AbstractHotkeyCombination const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
+	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
 	bool isEquivalentTo_impl(HotkeyCombinationCollection const & other) const override;
 };
 
 typedef std::function<std::shared_ptr<AbstractHotkeyCombination>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> HotkeyCombinationFactoryMethod;
+typedef std::function<std::shared_ptr<AbstractHotkeyCombination>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> MouseInputsFactoryMethod;
 
 struct Command
 {
@@ -143,6 +169,7 @@ struct CommandsInfoContainer
 	CommandID ensureMandatoryCommandAttributesAreCorrect(hat::core::ParsedCsvRow const & data) const;
 
 	void pushDataRow(hat::core::ParsedCsvRow const & data, HotkeyCombinationFactoryMethod hotkey_builder);
+	void pushDataRowForMouseInput(hat::core::ParsedCsvRow const & data, MouseInputsFactoryMethod mouse_inputs_builder);
 	void pushDataRow(hat::core::ParsedCsvRow const & data);
 	void pushDataRowForAggregatedCommand(hat::core::ParsedCsvRow const & data);
 private:
@@ -158,7 +185,7 @@ public:
 	std::pair<bool, size_t> getEnvironmentIndex(std::string const & environmentStringId) const;
 	CommandsContainer const & getAllCommands() const;
 	static CommandsInfoContainer parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
-	void consumeTypingSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
+	void consumeTypingSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder);
 	bool operator == (CommandsInfoContainer const  & other) const;
 };
 

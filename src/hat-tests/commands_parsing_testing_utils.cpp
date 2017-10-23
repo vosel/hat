@@ -16,6 +16,13 @@ auto getMockHotkeyCombinationProvider() {
 		return std::make_shared<core::SimpleHotkeyCombination>(param);
 	};
 };
+
+auto getMockMouseInputsProvider() {
+	return [] (std::string const & param, core::CommandID const & commandID, size_t env_index) {
+		return std::make_shared<core::SimpleMouseInput>(param);
+	};
+};
+
 core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & configContents, std::function <core::CommandsInfoContainer (std::istream & srcStream)> objectProviderCallback)
 {	
 	std::stringstream toParse(configContents);
@@ -40,7 +47,7 @@ core::CommandsInfoContainer simulateAdditionalTypingSequencesConfigParsing(
 {
 	return simulateParseConfigFileCall(configContents, [&](std::istream & dataToProcess) {
 		core::CommandsInfoContainer result = sourceCommandsContainerObject;
-		result.consumeTypingSequencesConfigFile(dataToProcess, getMockHotkeyCombinationProvider());
+		result.consumeTypingSequencesConfigFile(dataToProcess, getMockHotkeyCombinationProvider(), getMockMouseInputsProvider());
 		return result;
 	});
 }

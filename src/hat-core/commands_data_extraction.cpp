@@ -36,6 +36,11 @@ LINKAGE_RESTRICTION bool SimpleHotkeyCombination::isEquivalentTo_impl(SimpleHotk
 	return checkSimpleEquivalence(*this, other);
 }
 
+LINKAGE_RESTRICTION bool SimpleMouseInput::isEquivalentTo_impl(SimpleMouseInput const & other) const
+{
+	return checkSimpleEquivalence(*this, other);
+}
+
 LINKAGE_RESTRICTION bool HotkeyCombinationCollection::isEquivalentTo_impl(HotkeyCombinationCollection const & other) const
 {
 	return checkSimpleEquivalence(*this, other);
@@ -247,7 +252,7 @@ namespace {
 // Format of the row string:    <typeOfRow>\t<idOfCommand>\t<environments,for which the command is enabled>\t<command data>
 class MyTypingSequencesDataProcessor {
 	enum class TypeOfRow {
-		SIMPLE, AGGREGATE, UNKNOWN
+		SIMPLE_KEYBOARD_INPUT, SIMPLE_MOUSE_INPUT, AGGREGATE, UNKNOWN
 	};
 	TypeOfRow m_type = TypeOfRow::UNKNOWN;
 	CommandsInfoContainer const & m_targetContainerRef;
@@ -265,7 +270,9 @@ public:
 	bool operator()(std::string const & extractedString, size_t indexForString, bool moreDataInStream) {
 		if (indexForString == 0) {
 			if (extractedString == ConfigFilesKeywords::simpleTypingSeqCommand()) {
-				m_type = TypeOfRow::SIMPLE;
+				m_type = TypeOfRow::SIMPLE_KEYBOARD_INPUT;
+			} else if (extractedString == ConfigFilesKeywords::simpleMouseInputCommand()) {
+				m_type = TypeOfRow::SIMPLE_MOUSE_INPUT;
 			} else if (extractedString == ConfigFilesKeywords::aggregatedTypingSeqCommand()) {
 				m_type = TypeOfRow::AGGREGATE;
 			} else {
@@ -274,11 +281,11 @@ public:
 				throw std::runtime_error(error.str());
 			}
 		} else if ((indexForString >= 1) && (indexForString <= 4)) {
-			if ((TypeOfRow::SIMPLE == m_type) || (TypeOfRow::AGGREGATE == m_type)) {
+			if ((TypeOfRow::SIMPLE_KEYBOARD_INPUT == m_type) || (TypeOfRow::SIMPLE_MOUSE_INPUT == m_type) || (TypeOfRow::AGGREGATE == m_type)) {
 				m_accumulatedRawDataCells.push_back(extractedString);
 				return getCsvCommandDataRowElementsProcessor()(extractedString, indexForString - 1, moreDataInStream);
 			} else {
-				throw std::runtime_error("Unsupported data type (TypeOfRow::AGGREGATE) - todo: add the support for it");
+				throw std::runtime_error("Unsupported data type"); //TODO: add better error message here
 			}
 		} else if (indexForString == 5) { //environments, for which this command is enabled
 			if (extractedString == "*") {
@@ -309,13 +316,16 @@ public:
 	}
 
 	// This method determines the type of data, which should be pushed into the target container and passes the data to it in the needed format.
-	void storeAccumulatedDataTo(CommandsInfoContainer & target, HotkeyCombinationFactoryMethod hotkey_builder)
+	void storeAccumulatedDataTo(CommandsInfoContainer & target, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder)
 	{
 		for (auto flag : m_shouldEnableCommandForGivenEnv) { // here we finish generating synthetic representation of the simple command (as if it was typed inside the csv_commands file), and then pass the data to the target container.
 			m_accumulatedRawDataCells.push_back((flag == 1) ? m_commandData : "");
 		}
-		if (TypeOfRow::SIMPLE == m_type) {
+		if (TypeOfRow::SIMPLE_KEYBOARD_INPUT == m_type) {
 			target.pushDataRow(hat::core::ParsedCsvRow(m_accumulatedRawDataCells), hotkey_builder);
+		} else if (TypeOfRow::SIMPLE_MOUSE_INPUT == m_type) {
+			target.pushDataRowForMouseInput(
+				hat::core::ParsedCsvRow(m_accumulatedRawDataCells), mouse_inputs_builder);
 		} else if (TypeOfRow::AGGREGATE == m_type) {
 			target.pushDataRowForAggregatedCommand(
 				hat::core::ParsedCsvRow(m_accumulatedRawDataCells));
@@ -327,12 +337,12 @@ public:
 };
 }
 
-LINKAGE_RESTRICTION void CommandsInfoContainer::consumeTypingSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder)
+LINKAGE_RESTRICTION void CommandsInfoContainer::consumeTypingSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder)
 {
-	auto dataLineProcessor = [this, &hotkey_builder](std::string const & lineToProcess) {
+	auto dataLineProcessor = [this, &hotkey_builder, &mouse_inputs_builder](std::string const & lineToProcess) {
 		MyTypingSequencesDataProcessor rowProcessor(*this);
 		auto rowElements = splitTheRow(lineToProcess, '\t', rowProcessor);
-		rowProcessor.storeAccumulatedDataTo(*this, hotkey_builder);
+		rowProcessor.storeAccumulatedDataTo(*this, hotkey_builder, mouse_inputs_builder);
 	};
 	processFileStream(dataSource, 0, "typing sequences", dataLineProcessor, true);
 }
@@ -366,6 +376,12 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsv
 {
 	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
 	storeCommandObject(commandID, Command::create(data, m_environments.size(), hotkey_builder));
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForMouseInput(hat::core::ParsedCsvRow const & data, MouseInputsFactoryMethod mouse_inputs_builder)
+{
+	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
+	storeCommandObject(commandID, Command::create(data, m_environments.size(), mouse_inputs_builder));
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForAggregatedCommand(hat::core::ParsedCsvRow const & data)

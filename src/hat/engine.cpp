@@ -9,10 +9,11 @@
 #include <sstream>
 #include <iostream>
 #include "../external_dependencies/robot/Source/Keyboard.h"
+#include "../external_dependencies/robot/Source/Mouse.h"
+#include "../external_dependencies/robot/Source/Timer.h"
 
 #ifdef HAT_WINDOWS_SCANCODES_SUPPORT
 #include <windows.h>
-#include "../external_dependencies/robot/Source/Timer.h"
 #endif
 namespace hat {
 namespace tool {
@@ -101,7 +102,47 @@ extern bool SHOULD_USE_SCANCODES;
 	{
 		return ROBOT_NS::Window::IsAxEnabled();
 	}
+	namespace {
+		// This method parses the string representing a mouse input.
+		// The format of the string should look like this: "L@434,234" for the mouse clicks.
+		// The substring before '@' represents the type of the button, numbers after it - the coordinates of the click.
+		auto parseMouseInputCommandInfoString(std::string const & toProcess)
+		{
+			std::stringstream myStream(toProcess);
+			ROBOT_NS::Button buttonType;
+			{
+				auto buttonTypeStr = std::string{};
+				std::getline(myStream, buttonTypeStr, '@');
+				if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::LeftButton()) {
+					buttonType = ROBOT_NS::Button::ButtonLeft;
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::RightButton()) {
+					buttonType = ROBOT_NS::Button::ButtonRight;
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::MiddleButton()) {
+					buttonType = ROBOT_NS::Button::ButtonMid;
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::X1Button()) {
+					buttonType = ROBOT_NS::Button::ButtonX1;
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::X2Button()) {
+					buttonType = ROBOT_NS::Button::ButtonX2;
+				} else {
+					std::stringstream error;
+					error << "Unknown mouse button type specified: " << buttonTypeStr;
+					throw std::runtime_error(error.str());
+				}
+			}
+			
+			ROBOT_NS::Point coord;
+			{
+				auto x_str = std::string{};
+				auto y_str = std::string{};
+				std::getline(myStream, x_str, ',');
+				std::getline(myStream, y_str);
+				coord.X = std::stoi(x_str);
+				coord.Y = std::stoi(y_str);
+			}
 
+			return std::make_pair(buttonType, coord);
+		}
+	}
 	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & typingSequencesConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
 	{
 		std::fstream csvStream(commandsCSV.c_str());
@@ -162,8 +203,31 @@ extern bool SHOULD_USE_SCANCODES;
 			}
 		};
 
+		class MyMouseInput: public core::SimpleMouseInput
+		{
+			ROBOT_NS::Button m_buttonToClick;
+			ROBOT_NS::Point m_scr_coord;
+			unsigned int m_delay;
+		public:
+			MyMouseInput(std::string const & param, bool isEnabled,
+				ROBOT_NS::Button buttonToClick, ROBOT_NS::Point const & pos,
+				unsigned int delayAfterClick) :
+					core::SimpleMouseInput(param, isEnabled), m_buttonToClick(buttonToClick),
+					m_scr_coord(pos), m_delay(delayAfterClick) {
+			}
+			void execute() override {
+				if (enabled) {
+					ROBOT_NS::Mouse mouse;
+					mouse.SetPos(m_scr_coord);
+					mouse.Click(m_buttonToClick);
 
-		auto myLambda = [&] (std::string const & param, core::CommandID const & commandID, size_t evn_index) {
+					// Adding the wait operation after each click (for consistency sake):
+					ROBOT_NS::Timer::Sleep (m_delay);
+				}
+			}
+		};
+
+		auto lambdaForKeyboardInputObjectsCreation = [&] (std::string const & param, core::CommandID const & commandID, size_t ) {
 			ROBOT_NS::KeyList sequence;
 			auto result = ROBOT_NS::Keyboard::Compile(param.c_str(), sequence);
 			if (!result) {
@@ -174,13 +238,19 @@ extern bool SHOULD_USE_SCANCODES;
 			return std::make_shared<MyHotkeyCombination>(param, shouldEnable, sequence, keyboard_intervals);
 		};
 
-		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream, myLambda);
+		auto lambdaForMouseInputObjectsCreation = [&] (std::string const & param, core::CommandID const & commandID, size_t ) {
+			auto parameterizationParseResult = parseMouseInputCommandInfoString(param);
+			//TODO:add support for scrolling also
+			return std::make_shared<MyMouseInput>(param, true, parameterizationParseResult.first, parameterizationParseResult.second, keyboard_intervals);
+		};
+
+		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream, lambdaForKeyboardInputObjectsCreation);
 
 		for (auto & typingSequencesConfig: typingSequencesConfigs) {
 			if (typingSequencesConfig.size() > 0) {
 				std::cout << "Starting to read typing sequences file '" << typingSequencesConfig << "'\n";
 				std::fstream typingsSequensesConfigStream(typingSequencesConfig.c_str()); 
-				commandsConfig.consumeTypingSequencesConfigFile(typingsSequensesConfigStream, myLambda);
+				commandsConfig.consumeTypingSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation);
 			}
 		}
 
