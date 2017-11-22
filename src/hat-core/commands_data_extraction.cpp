@@ -245,6 +245,36 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 
 namespace {
 
+
+// This is a simple function, which processes the environments info string and sets the corresponding flags for the environments, which are mentioned in this string.
+// It is extracted from the MyInputSequencesDataProcessor class in order to avoid future code duplications.
+// preconditions: flagsForEnabledEnvironments.size() should be equal to the amount of environments in the system.
+//                environmentToIndexConverter should have the getEnvironmentIndex() function, which allows us to convert environment's string identifier into it's index
+void util_parseEnvironmentsEnablingString(
+	std::string const & stringToParse, 
+	std::vector<char> & flagsForEnabledEnvironments,
+	CommandsInfoContainer const & environmentToIndexConverter,
+	std::string const & configTypeForErrorMessage)
+{
+	if (stringToParse == "*") {
+		flagsForEnabledEnvironments.assign(
+			environmentToIndexConverter.getEnvironments().size(), 1); // setting the flags to 'all of the environments enabled'
+	} else {
+		auto elements = splitTheRow(stringToParse, ',');
+		for (auto & environment : elements) {
+			auto indexFindResult = environmentToIndexConverter.getEnvironmentIndex(environment);
+			if (indexFindResult.first) {
+				flagsForEnabledEnvironments[indexFindResult.second] = 1; // enable the given environment
+			} else {
+				std::stringstream error;
+				error << "Unknown environment id in the " << configTypeForErrorMessage << ": " << environment
+					<< "\nWhole environments string: " << stringToParse;
+				throw std::runtime_error(error.str());
+			}
+		}
+	}
+}
+
 // This is a simple class, which is used for processing the data lines read from the input_sequences config file by the splitTheRow() funcion.
 // Currently there are 2 types of the data lines in this config files: simple and aggregative.
 // Simple rows hold the command as the robot's format string, the aggregative rows hold commands,
@@ -287,24 +317,8 @@ public:
 			} else {
 				throw std::runtime_error("Unsupported data type"); //TODO: add better error message here
 			}
-		} else if (indexForString == 5) { //environments, for which this command is enabled
-			if (extractedString == "*") {
-				m_shouldEnableCommandForGivenEnv.assign(
-					m_targetContainerRef.getEnvironments().size(), 1); // setting the flags to 'all of the environments enabled'
-			} else {
-				auto elements = splitTheRow(extractedString, ',');
-				for (auto & environment : elements) {
-					auto indexFindResult = m_targetContainerRef.getEnvironmentIndex(environment);
-					if (indexFindResult.first) {
-						m_shouldEnableCommandForGivenEnv[indexFindResult.second] = 1; // enable the given environment
-					} else {
-						std::stringstream error;
-						error << "Unknown environment id in the input sequences file: " << environment
-							<< "\nWhole environments string: " << extractedString;
-						throw std::runtime_error(error.str());
-					}
-				}
-			}
+		} else if (indexForString == 5) { //determine the environments, for which this command is enabled from the environments string:
+			util_parseEnvironmentsEnablingString(extractedString, m_shouldEnableCommandForGivenEnv, m_targetContainerRef, "input sequences file");
 		} else if (indexForString == 6) {
 			m_commandData = extractedString;
 		} else {
