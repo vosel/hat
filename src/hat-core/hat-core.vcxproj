@@ -24,6 +24,7 @@
     <ClCompile Include="command_id.cpp" />
     <ClCompile Include="configs_abstraction_layer.cpp" />
     <ClCompile Include="preprocessed_layout.cpp" />
+    <ClCompile Include="variables_manager.cpp" />
     <ClCompile Include="user_defined_layout.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
@@ -33,6 +34,7 @@
     <ClInclude Include="command_id.hpp" />
     <ClInclude Include="configs_abstraction_layer.hpp" />
     <ClInclude Include="preprocessed_layout.hpp" />
+    <ClInclude Include="variables_manager.hpp" />
     <ClInclude Include="user_defined_layout.hpp" />
     <ClInclude Include="utils.hpp" />
   </ItemGroup>
