@@ -143,7 +143,7 @@ extern bool SHOULD_USE_SCANCODES;
 			return std::make_pair(buttonType, coord);
 		}
 	}
-	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
+	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
 	{
 		std::fstream csvStream(commandsCSV.c_str());
 		if (!csvStream.is_open()) {
@@ -251,6 +251,14 @@ extern bool SHOULD_USE_SCANCODES;
 				std::cout << "Starting to read input sequences file '" << inputSequencesConfig << "'\n";
 				std::fstream typingsSequensesConfigStream(inputSequencesConfig.c_str()); 
 				commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation);
+			}
+		}
+
+		for (auto & variablesManagersConfig: variablesManagersSetupConfigs) { // TODO: [low priority] refactoring: get rid of the code duplication (see loop above)
+			if (variablesManagersConfig.size() > 0) {
+				std::cout << "Starting to read varaibles managers config file '" << variablesManagersConfig << "'\n";
+				std::fstream filestream(variablesManagersConfig.c_str()); 
+				commandsConfig.consumeVariablesManagersConfig(filestream);
 			}
 		}
 
