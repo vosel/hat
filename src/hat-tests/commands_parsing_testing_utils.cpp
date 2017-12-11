@@ -41,6 +41,16 @@ core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & conf
 	});
 }
 
+core::CommandsInfoContainer simulateUI_variablesOperationsConfigParsing(
+	std::string const & configContents, core::CommandsInfoContainer const & sourceCommandsContainerObject)
+{
+	return simulateParseConfigFileCall(configContents, [&](std::istream & dataToProcess) {
+		core::CommandsInfoContainer result = sourceCommandsContainerObject;
+		result.consumeVariablesManagersConfig(dataToProcess);
+		return result;
+	});
+}
+
 //Note: the result returned by this function is not the same object, that was passed into it. The result object is copy-constructed inside this function.
 core::CommandsInfoContainer simulateAdditionalInputSequencesConfigParsing(
 		std::string const & configContents, core::CommandsInfoContainer const & sourceCommandsContainerObject)

@@ -34,6 +34,12 @@
     <ClCompile Include="VariablesManagerTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="variables_managers_config_building_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VariablesManagersConfigParsingTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="layout_parsing_verificator.hpp">
@@ -43,6 +49,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="variables_manager_testing_utils.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="variables_managers_config_building_utils.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

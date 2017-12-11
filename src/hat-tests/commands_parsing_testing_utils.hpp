@@ -23,6 +23,9 @@ namespace test {
 	core::CommandsInfoContainer simulateSetOfCommandConfigFiles(
 		std::string const & mainCommandsConfig, std::vector<std::string> const & additionalTypingSequencesConfigs);
 
+	core::CommandsInfoContainer simulateUI_variablesOperationsConfigParsing(
+		std::string const & configContents, core::CommandsInfoContainer const & sourceCommandsContainerObject);
+
 } // namespace test
 } // namespace hat
 #endif // COMMANDS_PARSING_TESTING_UTILS

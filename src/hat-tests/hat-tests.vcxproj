@@ -26,12 +26,15 @@
     <ClCompile Include="LayoutConfiguraionParsingTest.cpp" />
     <ClCompile Include="layout_parsing_verificator.cpp" />
     <ClCompile Include="MainTest.cpp" />
+    <ClCompile Include="VariablesManagersConfigParsingTest.cpp" />
     <ClCompile Include="VariablesManagerTest.cpp" />
+    <ClCompile Include="variables_managers_config_building_utils.cpp" />
     <ClCompile Include="variables_manager_testing_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="commands_parsing_testing_utils.hpp" />
     <ClInclude Include="layout_parsing_verificator.hpp" />
+    <ClInclude Include="variables_managers_config_building_utils.hpp" />
     <ClInclude Include="variables_manager_testing_utils.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
