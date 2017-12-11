@@ -31,7 +31,18 @@ namespace {
 		}
 	}
 }
-
+	LINKAGE_RESTRICTION VariableID VariableID::createFromUserString(std::string const & stringValue)
+	{
+		// TODO: [refactoring, low priority] get rid of the code duplication - reuse the code from isIdStringOk() function (see the commands_data_extraction.cpp file)
+		auto illegalCharacterIndex = stringValue.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_1234567890");
+		if (illegalCharacterIndex != std::string::npos) {
+			std::stringstream error;
+			error << "Variable id string contains illegal symbol at position " << illegalCharacterIndex;
+			throw std::runtime_error(error.str());
+		}
+		return VariableID{ stringValue };
+	}
+	
 	LINKAGE_RESTRICTION void VariablesManager::declareVariable(VariableID const & variableID)
 	{
 		if (variableExists(variableID)) {

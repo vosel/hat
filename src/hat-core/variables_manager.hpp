@@ -24,6 +24,7 @@ public:
 	explicit VariableID(std::string const & value) : m_value(value) {};
 	std::string const & getValue() const { return m_value; }
 	bool operator == (VariableID const & other) const { return m_value == other.m_value; }
+	static VariableID createFromUserString(std::string const & stringValue);
 };
 
 } // namespace core
