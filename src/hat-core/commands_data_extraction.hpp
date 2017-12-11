@@ -7,6 +7,7 @@
 #define _COMMANDS_DATA_EXTRACTION_HPP
 
 #include "command_id.hpp"
+#include "variables_manager.hpp"
 #include <memory>
 #include <utility>
 #include <map>
@@ -60,6 +61,15 @@ struct ConfigFilesKeywords
 		static std::string const & X1Button() { static std::string const result{ "X1" }; return result; };
 		static std::string const & X2Button() { static std::string const result{ "X2" }; return result; };
 	};
+
+	// Keywords for specifying the text feedback behaviours
+	static std::string const & defineInternalLabelVariable()                 { static std::string const result{ "defineVariable" }; return result; };
+	static std::string const & textFeedbackSetInitialValue()                 { static std::string const result{ "initValueForVar" }; return result; };
+	static std::string const & textFeedbackAssignValue()                     { static std::string const result{ "variableUpdate_reset" }; return result; };
+	static std::string const & textFeedbackAppendValue()                     { static std::string const result{ "variableUpdate_append" }; return result; };
+	static std::string const & textFeedbackClearLastCharacter()              { static std::string const result{ "variableUpdate_backspace" }; return result; };
+	static std::string const & textFeedbackAppendFromAnotherVariable()       { static std::string const result{ "variableUpdate_appendValueFromAnotherLabel" }; return result; };
+	static std::string const & textFeedbackAssignFromAnotherVariable()       { static std::string const result{ "variableUpdate_assignValueFromAnotherLabel" }; return result; };
 };
 
 //This is a set of tests for the code, which handles the parsing of the data from hotkeys configuration csv.
@@ -153,7 +163,42 @@ struct Command
 
 };
 
+struct VariablesDataForEnvironments {
+	typedef std::vector<VariablesManager> VariablesManagersForEnvironments;
+	VariablesDataForEnvironments(size_t environments_count)
+		: m_variablesForEnvironments(environments_count) {}
+	void declareVariableForAllEnvironments(VariableID const & variableID)
+	{
+		for (auto & variablesManagerForEnv : m_variablesForEnvironments) {
+			variablesManagerForEnv.declareVariable(variableID);
+		}
+	}
+	VariablesManager const & getManagerForEnv_c(size_t environmentIndex) const
+	{
+		return m_variablesForEnvironments[environmentIndex];
+	}
+
+	VariablesManager & getManagerForEnv(size_t environmentIndex)
+	{
+		return m_variablesForEnvironments[environmentIndex];
+	}
+	
+	bool isVariableDeclaredForAll(VariableID const & toTest) const
+	{
+		for (auto & env : m_variablesForEnvironments) {
+			if (!env.variableExists(toTest)) {
+				return false;
+			}
+		}
+		return true;
+	}
+private:
+	VariablesManagersForEnvironments m_variablesForEnvironments;
+};
+
 //The class, which knows everything about all the hotkey combinations for all the environments
+// It also holds other information that is differentiated by environment.
+// For example it holds separate 'variableManager' object for each of the environments.
 struct CommandsInfoContainer
 {
 	typedef std::vector<std::string> EnvsContainer;
@@ -161,10 +206,15 @@ struct CommandsInfoContainer
 	typedef std::map<CommandID, size_t> CommandsMap; //Probably don't need this
 
 	EnvsContainer m_environments;
+private: //TODO: make all the fields in this class private
+	VariablesDataForEnvironments m_variables;
+public:
+	VariablesDataForEnvironments & getVariablesManagers() { return m_variables; };
+	bool isVariableDeclaredInManagers(VariableID const & toTest) const { return m_variables.isVariableDeclaredForAll(toTest); };
 	CommandsMap m_commandsMap; // maps string to index (not sure if it is actully needed)
 	CommandsContainer m_commandsList;
 
-	CommandsInfoContainer(hat::core::ParsedCsvRow const & parsedHeader) :m_environments(parsedHeader.m_customColumns) {}
+	CommandsInfoContainer(hat::core::ParsedCsvRow const & parsedHeader) : m_environments(parsedHeader.m_customColumns), m_variables(parsedHeader.m_customColumns.size()) {}
 
 	CommandID ensureMandatoryCommandAttributesAreCorrect(hat::core::ParsedCsvRow const & data) const;
 
@@ -172,6 +222,7 @@ struct CommandsInfoContainer
 	void pushDataRowForMouseInput(hat::core::ParsedCsvRow const & data, MouseInputsFactoryMethod mouse_inputs_builder);
 	void pushDataRow(hat::core::ParsedCsvRow const & data);
 	void pushDataRowForAggregatedCommand(hat::core::ParsedCsvRow const & data);
+
 private:
 	void storeCommandObject(CommandID const & commandID, Command const & commandToStore);
 public:
@@ -186,6 +237,7 @@ public:
 	CommandsContainer const & getAllCommands() const;
 	static CommandsInfoContainer parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
 	void consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder);
+	void consumeVariablesManagersConfig(std::istream & dataSource);
 	bool operator == (CommandsInfoContainer const  & other) const;
 };
 

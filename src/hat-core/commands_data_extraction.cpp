@@ -245,6 +245,20 @@ LINKAGE_RESTRICTION CommandsInfoContainer CommandsInfoContainer::parseConfigFile
 
 namespace {
 
+template <typename ValueType>
+ValueType getElementOrThrow(
+	std::map<std::string, ValueType> const & elementsMatchups, 
+	std::string const & stringToDispatch,
+	std::string const & typeOfFileForErrorMessage)
+{
+	if (elementsMatchups.count(stringToDispatch) > 0) {
+		return elementsMatchups.at(stringToDispatch);
+	} else {
+		std::stringstream error;
+		error << "Unknown type of the command in the " << typeOfFileForErrorMessage << " file. This is what is enterpreted as the command type string (it may be caused by use of space delimiter instead of <TAB>): \n'" << stringToDispatch << "'";
+		throw std::runtime_error(error.str());
+	}
+}
 
 // This is a simple function, which processes the environments info string and sets the corresponding flags for the environments, which are mentioned in this string.
 // It is extracted from the MyInputSequencesDataProcessor class in order to avoid future code duplications.
@@ -273,6 +287,21 @@ void util_parseEnvironmentsEnablingString(
 			}
 		}
 	}
+}
+
+// Simple utility function for converting a string (which is read from config file) into a number, which it is supposed to represent
+size_t getUintFromStringOrThrow(std::string const & toParse)
+{
+	auto pos = toParse.find_first_not_of("0123456789");
+	if (pos != std::string::npos) {
+		std::stringstream error;
+		error << "unexpected symbol in the string representing number (position - " << pos << "): " << toParse;
+		throw std::runtime_error(error.str());
+	}
+	size_t result {0};
+	std::stringstream mystream(toParse);
+	mystream >> result;
+	return result;
 }
 
 // This is a simple class, which is used for processing the data lines read from the input_sequences config file by the splitTheRow() funcion.
@@ -349,6 +378,196 @@ public:
 		}
 	}
 };
+
+//TODO: [low priority] refactor this code: this class was copy-pasted from MyInputSequencesDataProcessor class, so there is some duplication with it. Will have to clean it up.
+class TextFeedbackLogicConfigurationProcessor {
+	enum class TypeOfRow {
+		VARIABLE_DECLARATION,
+		INITIAL_VALUE_FOR_VARIABLE,
+		ASSIGN_TEXT,
+		APPEND_TEXT,
+		CLEAR_LAST_CHARACTERS,
+		ASSIGN_VALUE,
+		APPEND_VALUE,
+		UNKNOWN
+	};
+	static std::map<std::string, TypeOfRow> const & getRowTypesMap() {
+		static std::map<std::string, TypeOfRow> 
+			mymap{ 
+				 {ConfigFilesKeywords::defineInternalLabelVariable(), TypeOfRow::VARIABLE_DECLARATION}
+				,{ConfigFilesKeywords::textFeedbackSetInitialValue(), TypeOfRow::INITIAL_VALUE_FOR_VARIABLE}
+				,{ConfigFilesKeywords::textFeedbackAssignValue(), TypeOfRow::ASSIGN_TEXT}
+				,{ConfigFilesKeywords::textFeedbackAppendValue(), TypeOfRow::APPEND_TEXT}
+				,{ConfigFilesKeywords::textFeedbackClearLastCharacter(), TypeOfRow::CLEAR_LAST_CHARACTERS}
+				,{ConfigFilesKeywords::textFeedbackAppendFromAnotherVariable(), TypeOfRow::APPEND_VALUE}
+				,{ConfigFilesKeywords::textFeedbackAssignFromAnotherVariable(), TypeOfRow::ASSIGN_VALUE}
+			};
+		return mymap;
+	}
+	TypeOfRow m_type = TypeOfRow::UNKNOWN;
+
+	CommandsInfoContainer const & m_targetContainerRef;
+	std::vector<std::string> m_accumulatedRawDataCells;
+	std::vector<char> m_shouldEnableCommandForGivenEnv;
+
+	VariableID m_variableID;
+	CommandID m_triggerCommand;
+	std::string m_stringParameterValue;
+public:
+	TextFeedbackLogicConfigurationProcessor(CommandsInfoContainer const & targeContainerRef)
+		: m_targetContainerRef(targeContainerRef)
+	{
+		m_shouldEnableCommandForGivenEnv.assign(
+			m_targetContainerRef.getEnvironments().size(), 0); // setting the flags to 'none of the environments enabled'
+	}
+
+	void ensureTargetVariableExistsAndStoreIt(std::string const & value) {
+		m_variableID = VariableID{ value };
+		if (!(m_targetContainerRef.isVariableDeclaredInManagers(m_variableID))) {
+			std::stringstream error;
+			error << "Unknown variable id (" << value << ") provided as a target for the operation. Please declare a variable before using it.";
+			throw std::runtime_error(error.str());
+		}
+	}
+
+	bool operator()(std::string const & extractedString, size_t indexForString, bool moreDataInStream)
+	{
+		auto throwErrorOnTooManyStringElements = []()
+		{
+			std::stringstream error;
+			error << "Wrong format for the text feedback file's row: it has too many \\t symbols. Please check the documentation on the format of the data.";
+			throw std::runtime_error(error.str());
+		};
+
+		if (indexForString == 0) {
+			m_type = getElementOrThrow<TypeOfRow>(getRowTypesMap(), extractedString, "text feedback");
+		} else if (indexForString == 1) { //determine the environments, for which this command is enabled from the environments string:
+			if (TypeOfRow::VARIABLE_DECLARATION == m_type) {
+				
+				//Note: here we should not verify the existance of the variable (since we are declaring it right now). But we should check the re-definition
+				m_variableID = VariableID::createFromUserString(extractedString);
+				
+				if (m_targetContainerRef.isVariableDeclaredInManagers(m_variableID)) {
+					std::stringstream error;
+					error << "Variable redefinition (variableID = " << m_variableID.getValue() << "). This is not allowed.";
+					throw std::runtime_error(error.str());
+				}
+				if (moreDataInStream) { // last element for this type of row, so if there is more data, we should throw error
+					throwErrorOnTooManyStringElements();
+				}
+			} else {
+				if (extractedString.size() == 0) {
+					std::stringstream error;
+					error << "Error: no environments specified for the variable operation. It will have no effect during runtime. This is not allowed in variable manager's configuratoin. Either add at least one environment, or comment this line out.";
+					throw std::runtime_error(error.str());
+				}
+				util_parseEnvironmentsEnablingString(extractedString, m_shouldEnableCommandForGivenEnv, m_targetContainerRef, "input sequences file");
+			}
+		} else if (indexForString == 2) {
+			if (TypeOfRow::INITIAL_VALUE_FOR_VARIABLE == m_type) {
+				ensureTargetVariableExistsAndStoreIt(extractedString);
+			} else {
+				m_triggerCommand = CommandID{extractedString};
+				if (!m_targetContainerRef.hasCommandID(m_triggerCommand)) {
+					std::stringstream error;
+					error << "Unknown trigger command referenced by the variable operation descriptor: " << extractedString;
+					throw std::runtime_error(error.str());
+				}
+			}
+		} else if (indexForString == 3) {
+			if (TypeOfRow::INITIAL_VALUE_FOR_VARIABLE == m_type) {
+				m_stringParameterValue = extractedString;
+				if (moreDataInStream) { //last element for this type of row, so if there is more data, we should throw error
+					throwErrorOnTooManyStringElements();
+				}
+			} else {
+				ensureTargetVariableExistsAndStoreIt(extractedString);
+			}
+		} else if (indexForString == 4) {
+			m_stringParameterValue = extractedString;
+			if ((TypeOfRow::ASSIGN_VALUE == m_type) || (TypeOfRow::APPEND_VALUE == m_type)) {
+				if (!m_targetContainerRef.isVariableDeclaredInManagers(VariableID{m_stringParameterValue})) {
+					std::stringstream error;
+					error << "Trying to append/assign value from an unknown variable (variableID = " << m_stringParameterValue << ". Please declare the variable before referencing it.";
+					throw std::runtime_error(error.str());
+				}
+			}
+			if (moreDataInStream) {
+				throwErrorOnTooManyStringElements();
+			}
+		}
+		return true;
+	}
+	void storeAccumulatedDataTo(CommandsInfoContainer & target)
+	{
+		// Some sugar: 2 lambdas for making the code below less dense:
+		auto forEachEnabledEnv = [&](std::function<void (VariablesManager & )> operation) {
+			for (size_t i = 0; i < m_shouldEnableCommandForGivenEnv.size(); ++i) {
+				if (m_shouldEnableCommandForGivenEnv[i] == 1) {
+					operation(target.getVariablesManagers().getManagerForEnv(i));
+				}
+			}
+		};
+
+		auto addOnCommandOperation = 
+			[&](VariablesManager & manager, std::shared_ptr<VariableOperation> operation)
+		{
+			auto commandIndex = target.getCommandIndex(m_triggerCommand);
+			manager.addOperationToExecuteOnCommand(commandIndex, operation);
+		};
+
+		switch (m_type) {
+		case TypeOfRow::VARIABLE_DECLARATION:
+			target.getVariablesManagers().declareVariableForAllEnvironments(m_variableID);
+			break;
+		case TypeOfRow::INITIAL_VALUE_FOR_VARIABLE:
+			forEachEnabledEnv([&](VariablesManager & manager) {
+				manager.setVariableInitialValue(m_variableID, m_stringParameterValue);
+			});
+			break;
+		case TypeOfRow::ASSIGN_TEXT:
+			forEachEnabledEnv([&](VariablesManager & manager) {
+				addOnCommandOperation(manager, std::make_shared<AssignText>(
+					m_variableID, m_stringParameterValue));
+			});
+			break;
+		case TypeOfRow::APPEND_TEXT:
+			forEachEnabledEnv([&](VariablesManager & manager) {
+				addOnCommandOperation(manager, std::make_shared<AppendText>(
+					m_variableID, m_stringParameterValue));
+			});
+			break;
+		case TypeOfRow::CLEAR_LAST_CHARACTERS:
+		{
+			size_t const charactersCount =
+				(m_stringParameterValue.size() == 0) ? 
+					0 : getUintFromStringOrThrow(m_stringParameterValue);
+			if (charactersCount != 0) { // if character count is 0, then this operation will not do anything, so it is fine not to add it.
+				forEachEnabledEnv([&](VariablesManager & manager) {
+					addOnCommandOperation(manager, std::make_shared<ClearTailCharacters>(
+						m_variableID, charactersCount));
+				});
+			} // else {} //TODO: report warning to the user here (the 'ClearTailCharacters' operation with '0' parameter is discarded)
+			break;
+		}
+		case TypeOfRow::ASSIGN_VALUE:
+			forEachEnabledEnv([&](VariablesManager & manager) {
+				addOnCommandOperation(manager, std::make_shared<AssignValue>(
+					m_variableID, VariableID{ m_stringParameterValue }));
+			});
+			break;
+		case TypeOfRow::APPEND_VALUE:
+			forEachEnabledEnv([&](VariablesManager & manager) {
+				addOnCommandOperation(manager, std::make_shared<AppendValue>(
+					m_variableID, VariableID{ m_stringParameterValue }));
+			});
+			break;
+		case TypeOfRow::UNKNOWN:
+			throw std::runtime_error("Unsupported text feedback row type. Note: this exception should never be thrown (the issue should've been detected earlier)."); //unreachable code
+		}
+	}
+};
+
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder)
@@ -359,6 +578,16 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::consumeInputSequencesConfigFile(
 		rowProcessor.storeAccumulatedDataTo(*this, hotkey_builder, mouse_inputs_builder);
 	};
 	processFileStream(dataSource, 0, "input sequences", dataLineProcessor, true);
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::consumeVariablesManagersConfig(std::istream & dataSource)
+{
+	auto dataLineProcessor = [this](std::string const & lineToProcess) {
+		TextFeedbackLogicConfigurationProcessor rowProcessor(*this);
+		auto rowElements = splitTheRow(lineToProcess, '\t', rowProcessor);
+		rowProcessor.storeAccumulatedDataTo(*this);
+	};
+	processFileStream(dataSource, 0, "text variables behaviour logic", dataLineProcessor, true);
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRow(hat::core::ParsedCsvRow const & data)
