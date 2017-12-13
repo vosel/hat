@@ -263,8 +263,12 @@ extern bool SHOULD_USE_SCANCODES;
 		for (auto & inputSequencesConfig: inputSequencesConfigs) {
 			if (inputSequencesConfig.size() > 0) {
 				std::cout << "Starting to read input sequences file '" << inputSequencesConfig << "'\n";
-				std::fstream typingsSequensesConfigStream(inputSequencesConfig.c_str()); 
-				commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation);
+				std::fstream typingsSequensesConfigStream(inputSequencesConfig.c_str());
+				if (typingsSequensesConfigStream.is_open()) {
+					commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation);
+				} else {
+					std::cout << "  ERROR: file could not be opened. Please check the path.\n";
+				}
 			}
 		}
 
@@ -272,7 +276,11 @@ extern bool SHOULD_USE_SCANCODES;
 			if (variablesManagersConfig.size() > 0) {
 				std::cout << "Starting to read varaibles managers config file '" << variablesManagersConfig << "'\n";
 				std::fstream filestream(variablesManagersConfig.c_str()); 
-				commandsConfig.consumeVariablesManagersConfig(filestream);
+				if (filestream.is_open()) {
+					commandsConfig.consumeVariablesManagersConfig(filestream);
+				} else {
+					std::cout << "  ERROR: could not be opened. Please check the path.\n";
+				}
 			}
 		}
 
