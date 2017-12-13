@@ -79,7 +79,6 @@ LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, InternalL
 }
 
 LINKAGE_RESTRICTION bool InternalLayoutElementRepresentation::operator == (InternalLayoutElementRepresentation const & other) const {
-	auto DEBUG_RESULT = false; //TODO: remove this debug var
 	if (m_note == other.m_note) {
 		if (m_referencesVariable != other.m_referencesVariable) {
 			return false;
@@ -91,15 +90,15 @@ LINKAGE_RESTRICTION bool InternalLayoutElementRepresentation::operator == (Inter
 		}
 		if (m_isButton && other.m_isButton) {
 			if (shouldSwitchToAnotherEnvironment && other.shouldSwitchToAnotherEnvironment) {
-				DEBUG_RESULT = /*return*/ switchToAnotherEnvironment == other.switchToAnotherEnvironment;
+				return switchToAnotherEnvironment == other.switchToAnotherEnvironment;
 			} else if (!shouldSwitchToAnotherEnvironment && !other.shouldSwitchToAnotherEnvironment) {
-				DEBUG_RESULT = /*return*/ (m_referencedCommandID == other.m_referencedCommandID) && (optionsPagesEqual(other));
+				return (m_referencedCommandID == other.m_referencedCommandID) && (optionsPagesEqual(other));
 			}
 		} else if (!m_isButton && !other.m_isButton) {
-			DEBUG_RESULT = /*return*/ true;
+			return true;
 		}
 	}
-	return DEBUG_RESULT/*false*/;
+	return false;
 }
 
 LINKAGE_RESTRICTION std::pair<bool, size_t> InternalLayoutElementRepresentation::switchingToAnotherEnvironment_info() const
