@@ -60,7 +60,10 @@ public:
 	{
 		m_optionsForElements.reserve(data.size());
 		for (auto const & elem : data) {
-			m_optionsForElements.push_back(LayoutElementOptionToDisplay::createFromUserData( elem ));
+			// Silently discard the strings, which contain no non-space symbols:
+			if (elem.find_first_not_of(" \t") != std::string::npos) {
+				m_optionsForElements.push_back(LayoutElementOptionToDisplay::createFromUserData( elem ));
+			}
 		}
 	}; //TODO: remove this method
 

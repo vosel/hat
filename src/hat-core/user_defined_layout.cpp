@@ -49,8 +49,8 @@ LINKAGE_RESTRICTION auto LayoutElementTemplate::create(std::string const & confi
 		auto end = data.find_last_not_of(" \t");
 		if ((begin != std::string::npos) && (end != std::string::npos)) {
 			data = data.substr(begin, end - begin + 1); //don't really need to modify the string in-place (TODO: maybe will remove it to make the code less complicated)
+			elementOptionsListToShow.push_back(LayoutElementOptionToDisplay::createFromUserData(data));
 		}
-		elementOptionsListToShow.push_back(LayoutElementOptionToDisplay::createFromUserData(data));
 	});
 	return LayoutElementTemplate(elementOptionsListToShow);
 }
