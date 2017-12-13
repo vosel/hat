@@ -21,20 +21,38 @@
 namespace hat {
 namespace core {
 
+LINKAGE_RESTRICTION bool LayoutElementOptionToDisplay::operator == (LayoutElementOptionToDisplay const & other) const {
+	if (m_isVariableLabel) {
+		return other.m_isVariableLabel && (m_variableID == other.m_variableID);
+	}
+	return !other.m_isVariableLabel && (m_commandID == other.m_commandID);
+}
+
+LINKAGE_RESTRICTION LayoutElementOptionToDisplay LayoutElementOptionToDisplay::createFromUserData(std::string const & dataString)
+{
+	if (dataString.find(VARIABLE_DEF_CONFIG_PREFIX()) == 0) {
+		return LayoutElementOptionToDisplay{
+			VariableID{ dataString.substr(VARIABLE_DEF_CONFIG_PREFIX().size()) }
+		};
+	}
+	return LayoutElementOptionToDisplay{CommandID{dataString}};
+
+}
+
 LINKAGE_RESTRICTION auto LayoutElementTemplate::create(std::string const & configurationString)
 {
 	auto result = splitTheRow(configurationString, ',');
-	auto commandIDs = std::vector<CommandID>{};
-	std::for_each(begin(result), end(result), [&commandIDs](std::string & data) {
+	auto elementOptionsListToShow = OptionsContainer{};
+	std::for_each(begin(result), end(result), [&elementOptionsListToShow](std::string & data) {
 		// trim leading and trailing isspace symbols in data
 		auto begin = data.find_first_not_of(" \t");
 		auto end = data.find_last_not_of(" \t");
 		if ((begin != std::string::npos) && (end != std::string::npos)) {
 			data = data.substr(begin, end - begin + 1); //don't really need to modify the string in-place (TODO: maybe will remove it to make the code less complicated)
 		}
-		commandIDs.push_back(CommandID(data));
+		elementOptionsListToShow.push_back(LayoutElementOptionToDisplay::createFromUserData(data));
 	});
-	return LayoutElementTemplate(commandIDs);
+	return LayoutElementTemplate(elementOptionsListToShow);
 }
 
 LINKAGE_RESTRICTION LayoutElementTemplate::OptionsContainer const & LayoutElementTemplate::getOptions() const

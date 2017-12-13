@@ -58,29 +58,48 @@ LINKAGE_RESTRICTION InternalLayoutRepresentation ConfigsAbstractionLayer::genera
 					InternalLayoutElementRepresentation testElement;
 
 					if (firstNonEmptyNote.size() == 0) {
-						if (m_commandsConfig.hasCommandID(currentOption)) {
-							firstNonEmptyNote = m_commandsConfig.getCommandPrefs(currentOption).commandNote;
-						} else {
-							auto foundIter = m_layoutInfo.find_selector(currentOption);
-							if (foundIter != m_layoutInfo.non_existent_selector()) {
-								//TODO: get rid of this copy-paste (see code below)
-								firstNonEmptyNote = foundIter->second.get_note();
+						if (!currentOption.isVariableLabel()) { //NOTE: here we don't need to check variables (because they are always active), so, if we find a variable, we will not need the fallback string for inactive button.
+							auto const & commandID = currentOption.getComandID();
+							if (m_commandsConfig.hasCommandID(commandID)) {
+								firstNonEmptyNote = m_commandsConfig.getCommandPrefs(commandID).commandNote;
+							} else {
+								auto foundIter = m_layoutInfo.find_selector(commandID);
+								if (foundIter != m_layoutInfo.non_existent_selector()) {
+									//TODO: get rid of this copy-paste (see code below)
+									firstNonEmptyNote = foundIter->second.get_note();
+								}
 							}
 						}
 					}
-					if (activeIDs.find(currentOption) != activeIDs.end()) { // found the element, for which the button should be created
-						testElement.setCommandButtonAttrs(m_commandsConfig.getCommandPrefs(currentOption).commandNote, currentOption);
+					if (currentOption.isVariableLabel()) {
+						auto & variablesManager = m_commandsConfig.getVariablesManagers_c().getManagerForEnv_c(selectedEnv);
+						auto variableID = currentOption.getVariableID();
+						testElement.setButtonFlag(false);
+						if (variablesManager.variableExists(variableID)) {
+							testElement.setNote(variablesManager.getValue(variableID));
+							testElement.setReferencingVariableID(variableID);
+						} else {
+							testElement.setNote("<UNKNOWN_VARIABLE>"); // TODO: add warnings during configs parsing that the variable is undefined
+						}
 						currentRow.push_back(testElement);
 						foundActiveElementForThisPosition = true;
 						break;
-					} else { //try to find the options selection page:
-						auto foundIter = m_layoutInfo.find_selector(currentOption);
-						if (foundIter != m_layoutInfo.non_existent_selector()) {
-							testElement.setSelectorButtonAttrs(foundIter->second.get_note(), createLayoutPage(foundIter->second));
-							if (testElement.isActive()) {
-								currentRow.push_back(testElement);
-								foundActiveElementForThisPosition = true;
-								break;
+					} else {
+						auto const & commandID = currentOption.getComandID();
+						if (activeIDs.find(commandID) != activeIDs.end()) { // found the element, for which the button should be created
+							testElement.setCommandButtonAttrs(m_commandsConfig.getCommandPrefs(commandID).commandNote, commandID);
+							currentRow.push_back(testElement);
+							foundActiveElementForThisPosition = true;
+							break;
+						} else { //try to find the options selection page:
+							auto foundIter = m_layoutInfo.find_selector(commandID);
+							if (foundIter != m_layoutInfo.non_existent_selector()) {
+								testElement.setSelectorButtonAttrs(foundIter->second.get_note(), createLayoutPage(foundIter->second));
+								if (testElement.isActive()) {
+									currentRow.push_back(testElement);
+									foundActiveElementForThisPosition = true;
+									break;
+								}
 							}
 						}
 					}

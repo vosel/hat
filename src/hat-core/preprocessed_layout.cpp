@@ -40,6 +40,13 @@ LINKAGE_RESTRICTION InternalLayoutElementRepresentation & InternalLayoutElementR
 	m_note = note;
 	return *this;
 }
+LINKAGE_RESTRICTION InternalLayoutElementRepresentation & InternalLayoutElementRepresentation::setReferencingVariableID(VariableID const & id)
+{
+	m_referencedVariableID = id;
+	m_referencesVariable = true;
+	return *this;
+}
+
 
 LINKAGE_RESTRICTION InternalLayoutElementRepresentation & InternalLayoutElementRepresentation::setCommandButtonAttrs(std::string const & note, CommandID const & command)
 {
@@ -74,6 +81,14 @@ LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, InternalL
 LINKAGE_RESTRICTION bool InternalLayoutElementRepresentation::operator == (InternalLayoutElementRepresentation const & other) const {
 	auto DEBUG_RESULT = false; //TODO: remove this debug var
 	if (m_note == other.m_note) {
+		if (m_referencesVariable != other.m_referencesVariable) {
+			return false;
+		}
+		if (m_referencesVariable && other.m_referencesVariable) {
+			if (!(m_referencedVariableID == other.m_referencedVariableID)) {
+				return false;
+			}
+		}
 		if (m_isButton && other.m_isButton) {
 			if (shouldSwitchToAnotherEnvironment && other.shouldSwitchToAnotherEnvironment) {
 				DEBUG_RESULT = /*return*/ switchToAnotherEnvironment == other.switchToAnotherEnvironment;
@@ -100,6 +115,11 @@ LINKAGE_RESTRICTION std::string InternalLayoutElementRepresentation::getNote() c
 LINKAGE_RESTRICTION CommandID InternalLayoutElementRepresentation::getReferencedCommand() const
 {
 	return m_referencedCommandID;
+}
+
+LINKAGE_RESTRICTION VariableID InternalLayoutElementRepresentation::getReferencedVariable() const
+{
+	return m_referencedVariableID;
 }
 
 LINKAGE_RESTRICTION bool InternalLayoutElementRepresentation::is_button() const

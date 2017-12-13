@@ -7,6 +7,7 @@
 #define _USER_DEFINED_LAYOUT_HPP
 
 #include "command_id.hpp"
+#include "variables_manager.hpp"
 #include <ostream>
 #include <string>
 #include <map>
@@ -17,11 +18,40 @@
 namespace hat {
 namespace core {
 
+// This is a small struct, which could represent either a button or a label (for displaying automatically updated text variable) on the layout
+// Note: since there are no future plans of adding a diverse set of different controls, the simple isVariableLabel() member function is enough to handle the different situations.
+// If this chanes in the future, this class should be redesigned. 
+// Contract constraint: this class assumes that if isVariableLabel() returns 'true' the user will not call getComandID(), and if it returns 'false' the user will not call getVariableID(). Otherwise the behaviour is undefined.
+class LayoutElementOptionToDisplay
+{
+	CommandID m_commandID;
+	VariableID m_variableID;
+	bool m_isVariableLabel;
+public:
+	LayoutElementOptionToDisplay(CommandID const & commandID)
+		: m_commandID(commandID), m_isVariableLabel(false) {};
+
+	LayoutElementOptionToDisplay(VariableID const & variableID)
+		: m_variableID(variableID), m_isVariableLabel(true) {};
+
+	bool isVariableLabel() const { return m_isVariableLabel; };
+	VariableID getVariableID() const { return m_variableID; };
+	CommandID getComandID() const { return m_commandID; };
+	std::string const & getValue() const {
+		return m_isVariableLabel ? m_variableID.getValue() : m_commandID.getValue();
+	}
+	bool operator == (LayoutElementOptionToDisplay const & other) const;
+	static LayoutElementOptionToDisplay createFromUserData(std::string const & dataString);
+	
+	//TODO: move to the common class for string constants
+	static std::string const & VARIABLE_DEF_CONFIG_PREFIX() { static std::string result{ "text:" }; return result; };
+};
+
 //If there is no options for this element, an empty space is used as a layout element
 //For the list of options, the layout builder will pick up the first one, which is enabled for this environment
 struct LayoutElementTemplate
 {
-	typedef std::vector<CommandID> OptionsContainer;
+	typedef std::vector<LayoutElementOptionToDisplay> OptionsContainer;
 private:
 	OptionsContainer m_optionsForElements;
 public:
@@ -30,12 +60,19 @@ public:
 	{
 		m_optionsForElements.reserve(data.size());
 		for (auto const & elem : data) {
-			m_optionsForElements.push_back(CommandID{ elem });
+			m_optionsForElements.push_back(LayoutElementOptionToDisplay::createFromUserData( elem ));
 		}
 	}; //TODO: remove this method
 
 	OptionsContainer const & getOptions() const;
-	LayoutElementTemplate(std::vector<CommandID> const & data) :m_optionsForElements(data) {};
+	LayoutElementTemplate(OptionsContainer const & data) : m_optionsForElements(data) {};
+	LayoutElementTemplate(std::vector<CommandID> const & data)
+	{
+		m_optionsForElements.reserve(data.size());
+		for (auto & commandID : data) {
+			m_optionsForElements.push_back(LayoutElementOptionToDisplay{commandID});
+		}
+	};
 	static auto create(std::string const & configurationString);
 	bool operator == (LayoutElementTemplate const & other) const;
 };

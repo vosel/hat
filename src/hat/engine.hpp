@@ -28,12 +28,21 @@ class Engine : public hat::core::AbstractEngine
 	bool m_stickEnvToWindow;
 	std::vector<ROBOT_NS::uintptr> m_stickInfo;
 	unsigned int m_keystrokes_delay;
+	
+	// This is a simple callback function, which allows us to request UI updates on the client device (updates of the elements notes are done through this callback)
+	// We have to register this updater in separate step during engine initialisation step. This could be avoided if the change the hat::core::AbstractEngine into a template. This way we will be able to add 'tau' library's 'ElementID' type to the interface methods 'AbstractEngine', without adding to the hat::core project a dependency on 'tau'.
+	// TODO: try to rework the AbstractEngine into a template, which will make the engine code more streamlined and type-safe.
+	std::function<void (tau::common::ElementID const &, std::string)> m_uiNotesUpdater;
 
 	mutable bool m_shouldRebuildNormalLayout{ true };
 	mutable std::vector<tau::common::LayoutPageID> TOP_PAGES_IDS;
 	mutable tau::layout_generation::LayoutInfo m_currentNormalLayout;
 	mutable std::vector<tau::common::LayoutPageID>::const_iterator m_lastTopPageSelected;
-
+	
+	// A mapping of the variables to the list of layout element IDs, which display that variables.
+	// this map is auto-refreshed each time the normal layout is re-generated.
+	mutable std::map<hat::core::VariableID, std::vector<tau::common::ElementID>> m_currentlyDisplayedVariables;
+	
 	hat::core::LayoutUserInformation m_layoutInfo;
 	hat::core::CommandsInfoContainer m_commandsConfig;
 
@@ -54,6 +63,7 @@ protected:
 	virtual void switchLayout_restoreToNormalLayout() override;
 public:
 	std::string getCurrentLayoutJson() const;
+	void addNoteUpdatingFeedbackCallback(std::function<void (tau::common::ElementID const &, std::string)> callback);
 	void layoutPageSwitched(tau::common::LayoutPageID const & pageID);
 
 	static bool canStickToWindows();

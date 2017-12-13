@@ -210,6 +210,7 @@ private: //TODO: make all the fields in this class private
 	VariablesDataForEnvironments m_variables;
 public:
 	VariablesDataForEnvironments & getVariablesManagers() { return m_variables; };
+	VariablesDataForEnvironments const & getVariablesManagers_c() const { return m_variables; };
 	bool isVariableDeclaredInManagers(VariableID const & toTest) const { return m_variables.isVariableDeclaredForAll(toTest); };
 	CommandsMap m_commandsMap; // maps string to index (not sure if it is actully needed)
 	CommandsContainer m_commandsList;

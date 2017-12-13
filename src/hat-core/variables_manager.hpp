@@ -148,7 +148,7 @@ public:
 	void addOperationToExecuteOnCommand(size_t commandIndex, std::shared_ptr<VariableOperation> operation);
 
 	void updateValue(VariableID const & targetVariableID, std::string const & newValue);
-
+	//TODO: refactoring, optimisation : return std::vector<std::pair<VariableID, std::string>> here. It is easier for the user code - we don't have to query the variables updated values in separate call
 	std::vector<VariableID> executeCommandAndGetChangedVariablesList(size_t triggeredCommandIndex);
 	bool operator == (VariablesManager const & other) const;
 };

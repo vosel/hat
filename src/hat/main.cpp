@@ -86,6 +86,10 @@ private:
 	{
 		try {
 			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
+			m_engine->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
+				sendPacket_changeElementNote(elementToUpdate, newTextValue);
+				
+			});
 		} catch (std::runtime_error & e) {
 			std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
 			return false;

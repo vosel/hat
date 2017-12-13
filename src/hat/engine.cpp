@@ -91,11 +91,25 @@ extern bool SHOULD_USE_SCANCODES;
 
 		auto & hotkeyToExecute = commandToExecute.hotkeysForEnvironments[m_selectedEnvironment];
 		
-		if (hotkeyToExecute->enabled) { // debug output
+		if (hotkeyToExecute->enabled) {
 			std::cout << "Sequence for the command (id='" << commandToExecute.commandID.getValue()
 				<< "') decoded by Robot library. Simulating the sequence:\n\t" << hotkeyToExecute->m_value << "\n";
+			hotkeyToExecute->execute();
+
+
+			// Do the variable operations and updating their values in UI.
+			auto & variablesManager = m_commandsConfig.getVariablesManagers().getManagerForEnv(m_selectedEnvironment);
+			auto changedVariables = variablesManager.executeCommandAndGetChangedVariablesList(commandIndex);
+			for (auto & updatedVariableID : changedVariables) {
+				auto & listOfElementsToRefresh = m_currentlyDisplayedVariables[updatedVariableID];
+				auto newValue = variablesManager.getValue(updatedVariableID);
+				for (auto & elementIDToRefresh : listOfElementsToRefresh) {
+					if (m_uiNotesUpdater) {
+						m_uiNotesUpdater(elementIDToRefresh, newValue);
+					}
+				}
+			}
 		}
-		commandToExecute.hotkeysForEnvironments[m_selectedEnvironment]->execute();
 	}
 
 	bool Engine::canStickToWindows()
@@ -336,6 +350,9 @@ extern bool SHOULD_USE_SCANCODES;
 	std::string Engine::getCurrentLayoutJson_normal() const
 	{
 		using namespace std::string_literals;
+		
+		m_currentlyDisplayedVariables.clear(); // Each time we generate the new normal layout, we have to refresh this mapping.
+
 		hat::core::ConfigsAbstractionLayer layer(m_layoutInfo, m_commandsConfig);
 		auto currentLayoutState = layer.generateLayoutPresentation(m_selectedEnvironment, isEnv_selected);
 
@@ -356,13 +373,24 @@ extern bool SHOULD_USE_SCANCODES;
 			for (auto const & row : userData.getLayout()) {
 				auto newElementsRow = tau::layout_generation::EvenlySplitLayoutElementsContainer{ false };
 				for (auto const & elem : row) {
+					
+					// Simple lambda, which records the label id with the variable id, which this label represents
+					auto linkIdWithTextVariableIfNeeded = [&](tau::common::ElementID const & elementID) {
+						if (elem.referencesVariable()) {
+							auto variableID = elem.getReferencedVariable();
+							m_currentlyDisplayedVariables[variableID].push_back(elementID);
+						}
+					};
+
 					if (elem.is_button()) {
 						auto toPush = tau::layout_generation::ButtonLayoutElement();
 						toPush.note(hat::core::escapeRawUTF8_forJson(elem.getNote()));
 						if (elem.isActive()) {
 							if (elem.getReferencedCommand().nonEmpty()) {
 								size_t commandIndex = m_commandsConfig.getCommandIndex(elem.getReferencedCommand());
-								toPush.ID(tau::common::ElementID(generateTauIdentifierForCommand(commandIndex)));
+								auto idToUse = tau::common::ElementID{generateTauIdentifierForCommand(commandIndex)};
+								linkIdWithTextVariableIfNeeded(idToUse);
+								toPush.ID(idToUse);
 								if (navigationIDs.hasFallbackID()) {
 									//Since this button does not swtich to any page explicitly, we add an automatic fallback switch here
 									toPush.switchToAnotherLayoutPageOnClick(navigationIDs.m_fallbackId);
@@ -388,16 +416,22 @@ extern bool SHOULD_USE_SCANCODES;
 
 							auto anotherEnvironmentSwitchingInfo = elem.switchingToAnotherEnvironment_info();
 							if (anotherEnvironmentSwitchingInfo.first) {
-								toPush.ID(tau::common::ElementID(generateTauIdentifierForEnvSwitching(anotherEnvironmentSwitchingInfo.second)));
+								auto idToUse = tau::common::ElementID(generateTauIdentifierForEnvSwitching(anotherEnvironmentSwitchingInfo.second));
+								linkIdWithTextVariableIfNeeded(idToUse);
+								toPush.ID(idToUse);
 							}
 						} else {
 							toPush.setEnabled(false);
 						}
 						newElementsRow.push(toPush);
 					} else {
-						newElementsRow.push(tau::layout_generation::LabelElement(hat::core::escapeRawUTF8_forJson(elem.getNote())));
+						//TODO: clean up the code for registering the IDs. Currently we have to call manually linkIdWithTextVariableIfNeeded() function. It's logic should be applied automatically when we generate the ElementID here (and in the code above).
+						auto idToUse = tau::common::ElementID(generateTrowawayTauIdentifier());
+						linkIdWithTextVariableIfNeeded(idToUse);
+						auto elementToAdd = tau::layout_generation::LabelElement(hat::core::escapeRawUTF8_forJson(elem.getNote()));
+						elementToAdd.ID(idToUse); // don't forget to assign the ID to the label
+						newElementsRow.push(elementToAdd);
 					}
-
 				}
 				result.push(newElementsRow);
 			}
@@ -469,5 +503,12 @@ extern bool SHOULD_USE_SCANCODES;
 		}
 	}
 
+	void Engine::addNoteUpdatingFeedbackCallback(std::function<void (tau::common::ElementID const &, std::string)> callback)
+	{
+		if (m_uiNotesUpdater) {
+			throw std::runtime_error("Trying to re-assign the ui notes updater callback. This is not allowed and should never happen.");
+		}
+		m_uiNotesUpdater = callback;
+	}
 } //namespace tool
 } //namespace hat

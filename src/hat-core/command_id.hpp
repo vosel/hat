@@ -16,7 +16,7 @@ class CommandID // TODO: rename to something like 'ButtonActionID' (since it is 
 public:
 	CommandID() {};
 	explicit CommandID(std::string const & value) : m_value(value) {};
-	std::string getValue() const;
+	std::string const & getValue() const;
 	bool operator == (CommandID const & other) const;
 	bool operator < (CommandID const & other) const;
 	bool nonEmpty() const;

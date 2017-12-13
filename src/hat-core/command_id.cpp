@@ -26,7 +26,7 @@ LINKAGE_RESTRICTION bool CommandID::operator < (CommandID const & other) const
 	return m_value < other.m_value;
 }
 
-LINKAGE_RESTRICTION std::string CommandID::getValue() const
+LINKAGE_RESTRICTION std::string const & CommandID::getValue() const
 {
 	return m_value;
 }

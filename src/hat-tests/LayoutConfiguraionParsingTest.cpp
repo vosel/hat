@@ -38,6 +38,21 @@ TEST_CASE("layout element template parsing", "[layout_config]")
 	REQUIRE(severalElementsTemplatesString1 == severalElementsTemplatesString2);
 }
 
+TEST_CASE("layout element template for variables", "[layout_config]")
+{
+	auto const simpleVariableID{"variableID"s};
+	auto const simpleCommandID{"commandID"s};
+	
+	auto const templateForVariable(hat::core::LayoutElementTemplate::create(hat::core::LayoutElementOptionToDisplay::VARIABLE_DEF_CONFIG_PREFIX() + simpleVariableID));
+	auto const templateForCommand(hat::core::LayoutElementTemplate::create(simpleCommandID));
+
+	REQUIRE      (templateForVariable.getOptions()[0].isVariableLabel());
+	REQUIRE      (templateForVariable.getOptions()[0].getVariableID().getValue() == simpleVariableID);
+	
+	REQUIRE_FALSE(templateForCommand.getOptions()[0].isVariableLabel());
+	REQUIRE      (templateForCommand.getOptions()[0].getComandID().getValue() == simpleCommandID);
+}
+
 TEST_CASE("layout page template parsing", "[layout_config]")
 {
 	//REQUIRE_THROWS(hat::core::LayoutPageTemplate::create("string without proper page prefix"s));
