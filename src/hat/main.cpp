@@ -40,7 +40,7 @@ public:
 	virtual void packetReceived_requestProcessingError(
 		std::string const & layoutID, std::string const & additionalData) override
 	{
-		std::cout << "Error received from client:\nLayouID: "
+		std::cout << "Error received from client:\nLayoutID: "
 			<< layoutID << "\nError: " << additionalData << "\n";
 	}
 	virtual void packetReceived_buttonClick(
