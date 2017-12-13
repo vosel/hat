@@ -51,7 +51,7 @@ LINKAGE_RESTRICTION InternalLayoutRepresentation ConfigsAbstractionLayer::genera
 			std::vector<InternalLayoutElementRepresentation> currentRow;
 			for (auto const & elem : row) {
 				bool foundActiveElementForThisPosition = false;
-				std::string firstNonEmptyNote("");
+				std::string firstNonEmptyNote(""); //This is a fallback element, which will be used, if we don't find any suitable active command (or variable) for this position
 				for (auto const & currentOption : elem.getOptions()) {
 
 					//TODO: refactor and clean up the logic here (after adding the unit tests for it).
