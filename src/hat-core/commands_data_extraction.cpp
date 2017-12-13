@@ -438,9 +438,17 @@ public:
 			error << "Wrong format for the text feedback file's row: it has too many \\t symbols. Please check the documentation on the format of the data.";
 			throw std::runtime_error(error.str());
 		};
-
+		auto throwOnNotEnoughArguments = [&]() {
+			std::stringstream error;
+			error << "Not enough arguments provided to the variable operation string. Please make sure that all the parameters are there.";
+			throw std::runtime_error(error.str());
+		};
+		
 		if (indexForString == 0) {
 			m_type = getElementOrThrow<TypeOfRow>(getRowTypesMap(), extractedString, "text feedback");
+			if (!moreDataInStream) {
+				throwOnNotEnoughArguments();
+			}
 		} else if (indexForString == 1) { //determine the environments, for which this command is enabled from the environments string:
 			if (TypeOfRow::VARIABLE_DECLARATION == m_type) {
 				
@@ -462,10 +470,16 @@ public:
 					throw std::runtime_error(error.str());
 				}
 				util_parseEnvironmentsEnablingString(extractedString, m_shouldEnableCommandForGivenEnv, m_targetContainerRef, "input sequences file");
+				if (!moreDataInStream) {
+					throwOnNotEnoughArguments();
+				}
 			}
 		} else if (indexForString == 2) {
 			if (TypeOfRow::INITIAL_VALUE_FOR_VARIABLE == m_type) {
 				ensureTargetVariableExistsAndStoreIt(extractedString);
+				if (!moreDataInStream) {
+					throwOnNotEnoughArguments();
+				}
 			} else {
 				m_triggerCommand = CommandID{extractedString};
 				if (!m_targetContainerRef.hasCommandID(m_triggerCommand)) {
@@ -481,6 +495,9 @@ public:
 					throwErrorOnTooManyStringElements();
 				}
 			} else {
+				if (!moreDataInStream) {
+					throwOnNotEnoughArguments();
+				}
 				ensureTargetVariableExistsAndStoreIt(extractedString);
 			}
 		} else if (indexForString == 4) {
