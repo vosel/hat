@@ -220,7 +220,10 @@ void processFileStream(std::istream & dataSource, size_t lineCounterStart, std::
 		}
 		++lineCount;
 		try {
-			if (tmpStr.size() > 0) { // Empty lines are just skipped here
+			size_t firstNonSpaceCharacterInd = tmpStr.find_first_not_of(" \t");
+			if ((firstNonSpaceCharacterInd != std::string::npos)
+				&& (tmpStr[firstNonSpaceCharacterInd] != '#')) // Empty (without any non-space symbols) or commented out lines are just skipped here
+			{
 				dataProcessor(tmpStr);
 			}
 		} catch (std::runtime_error & e) {
