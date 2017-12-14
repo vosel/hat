@@ -41,6 +41,11 @@ LINKAGE_RESTRICTION bool SimpleMouseInput::isEquivalentTo_impl(SimpleMouseInput 
 	return checkSimpleEquivalence(*this, other);
 }
 
+LINKAGE_RESTRICTION bool SystemCall::isEquivalentTo_impl(SystemCall const & other) const
+{
+	return (enabled == other.enabled) && (m_value == other.m_value);
+}
+
 LINKAGE_RESTRICTION bool InputSequencesCollection::isEquivalentTo_impl(InputSequencesCollection const & other) const
 {
 	return checkSimpleEquivalence(*this, other);
@@ -311,7 +316,7 @@ size_t getUintFromStringOrThrow(std::string const & toParse)
 // Format of the row string:    <typeOfRow>\t<idOfCommand>\t<environments,for which the command is enabled>\t<command data>
 class MyInputSequencesDataProcessor {
 	enum class TypeOfRow {
-		SIMPLE_KEYBOARD_INPUT, SIMPLE_MOUSE_INPUT, AGGREGATE, UNKNOWN
+		SIMPLE_KEYBOARD_INPUT, SIMPLE_MOUSE_INPUT, SYSTEM_CALL, AGGREGATE, UNKNOWN
 	};
 	TypeOfRow m_type = TypeOfRow::UNKNOWN;
 	CommandsInfoContainer const & m_targetContainerRef;
@@ -332,6 +337,8 @@ public:
 				m_type = TypeOfRow::SIMPLE_KEYBOARD_INPUT;
 			} else if (extractedString == ConfigFilesKeywords::simpleMouseInputCommand()) {
 				m_type = TypeOfRow::SIMPLE_MOUSE_INPUT;
+			} else if (extractedString == ConfigFilesKeywords::systemCallCommand()) {
+				m_type = TypeOfRow::SYSTEM_CALL;
 			} else if (extractedString == ConfigFilesKeywords::aggregatedSetOfCommands()) {
 				m_type = TypeOfRow::AGGREGATE;
 			} else {
@@ -340,7 +347,11 @@ public:
 				throw std::runtime_error(error.str());
 			}
 		} else if ((indexForString >= 1) && (indexForString <= 4)) {
-			if ((TypeOfRow::SIMPLE_KEYBOARD_INPUT == m_type) || (TypeOfRow::SIMPLE_MOUSE_INPUT == m_type) || (TypeOfRow::AGGREGATE == m_type)) {
+			if ((TypeOfRow::SIMPLE_KEYBOARD_INPUT == m_type)
+				|| (TypeOfRow::SIMPLE_MOUSE_INPUT == m_type)
+				|| (TypeOfRow::SYSTEM_CALL == m_type)
+				|| (TypeOfRow::AGGREGATE == m_type))
+			{
 				m_accumulatedRawDataCells.push_back(extractedString);
 				return getCsvCommandDataRowElementsProcessor()(extractedString, indexForString - 1, moreDataInStream);
 			} else {
@@ -369,6 +380,9 @@ public:
 		} else if (TypeOfRow::SIMPLE_MOUSE_INPUT == m_type) {
 			target.pushDataRowForMouseInput(
 				hat::core::ParsedCsvRow(m_accumulatedRawDataCells), mouse_inputs_builder);
+		} else if (TypeOfRow::SYSTEM_CALL == m_type) {
+			target.pushDataRowForSystemCallCommand(
+				hat::core::ParsedCsvRow(m_accumulatedRawDataCells));
 		} else if (TypeOfRow::AGGREGATE == m_type) {
 			target.pushDataRowForAggregatedCommand(
 				hat::core::ParsedCsvRow(m_accumulatedRawDataCells));
@@ -642,6 +656,16 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForMouseInput(hat::co
 {
 	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
 	storeCommandObject(commandID, Command::create(data, m_environments.size(), mouse_inputs_builder));
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForSystemCallCommand(hat::core::ParsedCsvRow const & data)
+{
+	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
+	storeCommandObject(commandID, Command::create(data, m_environments.size(),
+		[&](std::string const & param, CommandID const & commandId, size_t currentEnvironmentIndex) {
+			return std::make_shared<SystemCall>(param);
+		}
+	));
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForAggregatedCommand(hat::core::ParsedCsvRow const & data)
