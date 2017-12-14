@@ -92,8 +92,8 @@ extern bool SHOULD_USE_SCANCODES;
 		auto & hotkeyToExecute = commandToExecute.hotkeysForEnvironments[m_selectedEnvironment];
 		
 		if (hotkeyToExecute->enabled) {
-			std::cout << "Sequence for the command (id='" << commandToExecute.commandID.getValue()
-				<< "') decoded by Robot library. Simulating the sequence:\n\t" << hotkeyToExecute->m_value << "\n";
+			std::cout << "The command (id='" << commandToExecute.commandID.getValue()
+				<< "') is ready for execution. String representation of command to execute:\n\t" << hotkeyToExecute->m_value << "\n";
 			hotkeyToExecute->execute();
 
 
