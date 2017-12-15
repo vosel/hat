@@ -41,6 +41,10 @@ LINKAGE_RESTRICTION bool SimpleMouseInput::isEquivalentTo_impl(SimpleMouseInput 
 	return checkSimpleEquivalence(*this, other);
 }
 
+LINKAGE_RESTRICTION bool SimpleSleepOperation::isEquivalentTo_impl(SimpleSleepOperation const & other) const
+{
+}
+
 LINKAGE_RESTRICTION bool SystemCall::isEquivalentTo_impl(SystemCall const & other) const
 {
 	return (enabled == other.enabled) && (m_value == other.m_value);
@@ -319,7 +323,7 @@ size_t getUintFromStringOrThrow(std::string const & toParse)
 // Format of the row string:    <typeOfRow>\t<idOfCommand>\t<environments,for which the command is enabled>\t<command data>
 class MyInputSequencesDataProcessor {
 	enum class TypeOfRow {
-		SIMPLE_KEYBOARD_INPUT, SIMPLE_MOUSE_INPUT, SYSTEM_CALL, AGGREGATE, UNKNOWN
+		SIMPLE_KEYBOARD_INPUT, SIMPLE_MOUSE_INPUT, SLEEP_OPERATION, SYSTEM_CALL, AGGREGATE, UNKNOWN
 	};
 	TypeOfRow m_type = TypeOfRow::UNKNOWN;
 	CommandsInfoContainer const & m_targetContainerRef;
@@ -340,6 +344,8 @@ public:
 				m_type = TypeOfRow::SIMPLE_KEYBOARD_INPUT;
 			} else if (extractedString == ConfigFilesKeywords::simpleMouseInputCommand()) {
 				m_type = TypeOfRow::SIMPLE_MOUSE_INPUT;
+			} else if (extractedString == ConfigFilesKeywords::sleepOperationCommand()) {
+				m_type = TypeOfRow::SLEEP_OPERATION;
 			} else if (extractedString == ConfigFilesKeywords::systemCallCommand()) {
 				m_type = TypeOfRow::SYSTEM_CALL;
 			} else if (extractedString == ConfigFilesKeywords::aggregatedSetOfCommands()) {
@@ -352,6 +358,7 @@ public:
 		} else if ((indexForString >= 1) && (indexForString <= 4)) {
 			if ((TypeOfRow::SIMPLE_KEYBOARD_INPUT == m_type)
 				|| (TypeOfRow::SIMPLE_MOUSE_INPUT == m_type)
+				|| (TypeOfRow::SLEEP_OPERATION == m_type)
 				|| (TypeOfRow::SYSTEM_CALL == m_type)
 				|| (TypeOfRow::AGGREGATE == m_type))
 			{
@@ -373,7 +380,7 @@ public:
 	}
 
 	// This method determines the type of data, which should be pushed into the target container and passes the data to it in the needed format.
-	void storeAccumulatedDataTo(CommandsInfoContainer & target, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder)
+	void storeAccumulatedDataTo(CommandsInfoContainer & target, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder, SleepInputsFactoryMethod sleep_objects_builder)
 	{
 		for (auto flag : m_shouldEnableCommandForGivenEnv) { // here we finish generating synthetic representation of the simple command (as if it was typed inside the csv_commands file), and then pass the data to the target container.
 			m_accumulatedRawDataCells.push_back((flag == 1) ? m_commandData : "");
@@ -383,6 +390,9 @@ public:
 		} else if (TypeOfRow::SIMPLE_MOUSE_INPUT == m_type) {
 			target.pushDataRowForMouseInput(
 				hat::core::ParsedCsvRow(m_accumulatedRawDataCells), mouse_inputs_builder);
+		} else if (TypeOfRow::SLEEP_OPERATION == m_type) {
+			target.pushDataRowForSleepOperation(
+				hat::core::ParsedCsvRow(m_accumulatedRawDataCells), sleep_objects_builder);
 		} else if (TypeOfRow::SYSTEM_CALL == m_type) {
 			target.pushDataRowForSystemCallCommand(
 				hat::core::ParsedCsvRow(m_accumulatedRawDataCells));
@@ -604,12 +614,12 @@ public:
 
 }
 
-LINKAGE_RESTRICTION void CommandsInfoContainer::consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder)
+LINKAGE_RESTRICTION void CommandsInfoContainer::consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder, SleepInputsFactoryMethod sleep_objects_builder)
 {
-	auto dataLineProcessor = [this, &hotkey_builder, &mouse_inputs_builder](std::string const & lineToProcess) {
+	auto dataLineProcessor = [this, &hotkey_builder, &mouse_inputs_builder, &sleep_objects_builder](std::string const & lineToProcess) {
 		MyInputSequencesDataProcessor rowProcessor(*this);
 		auto rowElements = splitTheRow(lineToProcess, '\t', rowProcessor);
-		rowProcessor.storeAccumulatedDataTo(*this, hotkey_builder, mouse_inputs_builder);
+		rowProcessor.storeAccumulatedDataTo(*this, hotkey_builder, mouse_inputs_builder, sleep_objects_builder);
 	};
 	processFileStream(dataSource, 0, "input sequences", dataLineProcessor, true);
 }
@@ -659,6 +669,12 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForMouseInput(hat::co
 {
 	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
 	storeCommandObject(commandID, Command::create(data, m_environments.size(), mouse_inputs_builder));
+}
+
+LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForSleepOperation(hat::core::ParsedCsvRow const & data, SleepInputsFactoryMethod sleep_inputs_builder)
+{
+	auto commandID = ensureMandatoryCommandAttributesAreCorrect(data);
+	storeCommandObject(commandID, Command::create(data, m_environments.size(), sleep_inputs_builder));
 }
 
 LINKAGE_RESTRICTION void CommandsInfoContainer::pushDataRowForSystemCallCommand(hat::core::ParsedCsvRow const & data)

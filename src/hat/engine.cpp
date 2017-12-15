@@ -241,6 +241,19 @@ extern bool SHOULD_USE_SCANCODES;
 			}
 		};
 
+		class MySleepOperation: public core::SimpleSleepOperation
+		{
+			
+		public:
+			MySleepOperation(std::string const & param, unsigned int timeoutInMs, bool isEnabled)
+				: SimpleSleepOperation(param, timeoutInMs, isEnabled) {}
+			void execute() override {
+				if (enabled) {
+					ROBOT_NS::Timer::Sleep(m_delay);
+				}
+			}
+		};
+
 		auto lambdaForKeyboardInputObjectsCreation = [&] (std::string const & param, core::CommandID const & commandID, size_t ) {
 			ROBOT_NS::KeyList sequence;
 			auto result = ROBOT_NS::Keyboard::Compile(param.c_str(), sequence);
@@ -260,12 +273,17 @@ extern bool SHOULD_USE_SCANCODES;
 
 		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream, lambdaForKeyboardInputObjectsCreation);
 
+		auto lambdaForSleepObjectsCreation = [&] (std::string const & param, core::CommandID const & commandID, size_t ) {
+			auto sleepTimeout = std::stoi(param);
+			return std::make_shared<MySleepOperation>(param, sleepTimeout, true);
+		};
+
 		for (auto & inputSequencesConfig: inputSequencesConfigs) {
 			if (inputSequencesConfig.size() > 0) {
 				std::cout << "Starting to read input sequences file '" << inputSequencesConfig << "'\n";
 				std::fstream typingsSequensesConfigStream(inputSequencesConfig.c_str());
 				if (typingsSequensesConfigStream.is_open()) {
-					commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation);
+					commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation, lambdaForSleepObjectsCreation);
 				} else {
 					std::cout << "  ERROR: file could not be opened. Please check the path.\n";
 				}

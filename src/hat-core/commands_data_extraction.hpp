@@ -54,6 +54,7 @@ struct ConfigFilesKeywords
 	static std::string const & simpleTypingSeqCommand()     { static std::string const result{ "simpleTypingJob" }; return result; };
 	static std::string const & simpleMouseInputCommand()    { static std::string const result{ "mouseInput" }; return result; };
 	static std::string const & aggregatedSetOfCommands() { static std::string const result{ "commandSequence" }; return result; };
+	static std::string const & sleepOperationCommand()   { static std::string const result{ "sleepForTimeout" }; return result; };
 	static std::string const & systemCallCommand()       { static std::string const result{ "systemCall" }; return result; };
 	struct MouseButtonTypes {
 		static std::string const & LeftButton() { static std::string const result{ "L" }; return result; };
@@ -87,6 +88,7 @@ struct ParsedCsvRow
 
 struct SimpleHotkeyCombination;
 struct SimpleMouseInput;
+struct SimpleSleepOperation;
 struct SystemCall;
 struct InputSequencesCollection;
 struct AbstractSimulatedUserInput
@@ -103,6 +105,7 @@ struct AbstractSimulatedUserInput
 	virtual bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const = 0;
 	virtual bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const = 0;
 	virtual bool isEquivalentTo_impl(SimpleMouseInput const & other) const  = 0;
+	virtual bool isEquivalentTo_impl(SimpleSleepOperation const & other) const = 0;
 	virtual bool isEquivalentTo_impl(SystemCall const & other) const = 0;
 	virtual bool isEquivalentTo_impl(InputSequencesCollection const & other) const = 0;
 };
@@ -116,6 +119,7 @@ struct SimpleHotkeyCombination : public AbstractSimulatedUserInput
 	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override;
 	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
+	bool isEquivalentTo_impl(SimpleSleepOperation const & other) const override { return false; };
 	bool isEquivalentTo_impl(SystemCall const & other) const override { return false; };
 	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override {return false;};
 };
@@ -129,6 +133,20 @@ struct SimpleMouseInput : public AbstractSimulatedUserInput
 	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
 	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override;
+	bool isEquivalentTo_impl(SimpleSleepOperation const & other) const override { return false; };
+	bool isEquivalentTo_impl(SystemCall const & other) const override { return false; };
+	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override {return false;};
+};
+struct SimpleSleepOperation : public AbstractSimulatedUserInput
+{
+	unsigned int m_delay;
+	SimpleSleepOperation (std::string const & param, unsigned int timeoutInMs, bool isEnabled)
+		: AbstractSimulatedUserInput(param, isEnabled), m_delay(timeoutInMs) {}
+	void execute() override { AbstractSimulatedUserInput::execute(); };
+	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
+	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
+	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
+	bool isEquivalentTo_impl(SimpleSleepOperation const & other) const override;
 	bool isEquivalentTo_impl(SystemCall const & other) const override { return false; };
 	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override {return false;};
 };
@@ -139,6 +157,7 @@ struct SystemCall : AbstractSimulatedUserInput {
 	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
 	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
+	bool isEquivalentTo_impl(SimpleSleepOperation const & other) const override { return false; };
 	bool isEquivalentTo_impl(SystemCall const & other) const override;
 	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override {return false;};
 };
@@ -156,12 +175,15 @@ public:
 	bool isEquivalentTo_impl(AbstractSimulatedUserInput const & other) const override { return other.isEquivalentTo_impl(*this); };
 	bool isEquivalentTo_impl(SimpleHotkeyCombination const & other) const override { return false; };
 	bool isEquivalentTo_impl(SimpleMouseInput const & other) const override { return false; };
+	bool isEquivalentTo_impl(SimpleSleepOperation const & other) const override { return false; };
 	bool isEquivalentTo_impl(SystemCall const & other) const override { return false; };
 	bool isEquivalentTo_impl(InputSequencesCollection const & other) const override;
 };
 
 typedef std::function<std::shared_ptr<AbstractSimulatedUserInput>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> HotkeyCombinationFactoryMethod;
 typedef std::function<std::shared_ptr<AbstractSimulatedUserInput>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> MouseInputsFactoryMethod;
+typedef std::function<std::shared_ptr<AbstractSimulatedUserInput>(std::string const &, CommandID const & , size_t currentEnvironmentIndex)> SleepInputsFactoryMethod;
+
 
 struct Command
 {
@@ -236,6 +258,7 @@ public:
 
 	void pushDataRow(hat::core::ParsedCsvRow const & data, HotkeyCombinationFactoryMethod hotkey_builder);
 	void pushDataRowForMouseInput(hat::core::ParsedCsvRow const & data, MouseInputsFactoryMethod mouse_inputs_builder);
+	void pushDataRowForSleepOperation(hat::core::ParsedCsvRow const & data, SleepInputsFactoryMethod mouse_inputs_builder);
 	void pushDataRowForSystemCallCommand(hat::core::ParsedCsvRow const & data);
 	void pushDataRow(hat::core::ParsedCsvRow const & data);
 	void pushDataRowForAggregatedCommand(hat::core::ParsedCsvRow const & data);
@@ -253,7 +276,7 @@ public:
 	std::pair<bool, size_t> getEnvironmentIndex(std::string const & environmentStringId) const;
 	CommandsContainer const & getAllCommands() const;
 	static CommandsInfoContainer parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
-	void consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder);
+	void consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder, SleepInputsFactoryMethod sleep_objects_builder);
 	void consumeVariablesManagersConfig(std::istream & dataSource);
 	bool operator == (CommandsInfoContainer const  & other) const;
 };

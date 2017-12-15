@@ -23,6 +23,13 @@ auto getMockMouseInputsProvider() {
 	};
 };
 
+auto getMockSleepInputsProvider() {
+	return [] (std::string const & param, core::CommandID const & commandID, size_t env_index) {
+		auto sleepTimeout = std::stoi(param); //TODO: this should be done in one operation with the creation of the SimpleSleepOperation (so that the code could be re-used with the place, where a real instance of sleep object is created)
+		return std::make_shared<core::SimpleSleepOperation>(param, sleepTimeout, true);
+	};
+};
+
 core::CommandsInfoContainer simulateParseConfigFileCall(std::string const & configContents, std::function <core::CommandsInfoContainer (std::istream & srcStream)> objectProviderCallback)
 {	
 	std::stringstream toParse(configContents);
@@ -57,7 +64,7 @@ core::CommandsInfoContainer simulateAdditionalInputSequencesConfigParsing(
 {
 	return simulateParseConfigFileCall(configContents, [&](std::istream & dataToProcess) {
 		core::CommandsInfoContainer result = sourceCommandsContainerObject;
-		result.consumeInputSequencesConfigFile(dataToProcess, getMockHotkeyCombinationProvider(), getMockMouseInputsProvider());
+		result.consumeInputSequencesConfigFile(dataToProcess, getMockHotkeyCombinationProvider(), getMockMouseInputsProvider(), getMockSleepInputsProvider());
 		return result;
 	});
 }
