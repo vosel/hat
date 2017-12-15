@@ -62,6 +62,19 @@ struct ConfigFilesKeywords
 		static std::string const & MiddleButton() { static std::string const result{ "M" }; return result; };
 		static std::string const & X1Button() { static std::string const result{ "X1" }; return result; };
 		static std::string const & X2Button() { static std::string const result{ "X2" }; return result; };
+		
+		static std::string const & Scroll_pref()  { static std::string const result{ "scroll" }; return result; };
+		static bool isScrollingEvent(std::string const & toTest) { return toTest.find(Scroll_pref()) != std::string::npos; };
+		
+		//vertical scroll operations:
+		static std::string const & ScrollV()      { static std::string const result{ Scroll_pref() + "_v" }; return result; };
+		static std::string const & ScrollV_up()   { static std::string const result{ ScrollV() + "_up" }; return result; };
+		static std::string const & ScrollV_down() { static std::string const result{ ScrollV() + "_down" }; return result; };
+		
+		//horizontal scroll operations:
+		static std::string const & ScrollH()      { static std::string const result{ Scroll_pref() + "_h" }; return result; };
+		static std::string const & ScrollH_left() { static std::string const result{ ScrollH() + "_left" }; return result; };
+		static std::string const & ScrollH_right(){ static std::string const result{ ScrollH() + "_right" }; return result; };
 	};
 
 	// Keywords for specifying the text feedback behaviours

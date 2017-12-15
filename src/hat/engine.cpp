@@ -156,6 +156,42 @@ extern bool SHOULD_USE_SCANCODES;
 
 			return std::make_pair(buttonType, coord);
 		}
+
+		auto getScrollInfo(std::string const & toProcess) {
+			std::stringstream myStream(toProcess);
+			bool is_verticalScroll{ true };
+			bool shouldFlipNumericValue{ false };
+			{
+				auto scrollTypeStr = std::string{};
+				std::getline(myStream, scrollTypeStr, ' ');
+				if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollV()
+					|| scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollV_up())
+				{
+					is_verticalScroll = true;
+					shouldFlipNumericValue = false;
+				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollV_down()) {
+					is_verticalScroll = true;
+					shouldFlipNumericValue = true;
+				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollH()
+					|| scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollH_right())
+				{
+					is_verticalScroll = false;
+					shouldFlipNumericValue = false;
+				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollH_left()) {
+					is_verticalScroll = false;
+					shouldFlipNumericValue = true;
+				} else {
+					std::stringstream error;
+					error << "Unknown type of scroll specified: " << scrollTypeStr;
+					throw std::runtime_error(error.str());
+				}
+			}
+
+			auto param_str = std::string{};
+			std::getline(myStream, param_str);
+			auto scrollAmount = std::stoi(param_str); 
+			return std::pair<bool, int> {is_verticalScroll, shouldFlipNumericValue ? -scrollAmount : scrollAmount};
+		}
 	}
 	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
 	{
@@ -241,6 +277,44 @@ extern bool SHOULD_USE_SCANCODES;
 			}
 		};
 
+		class MyMouseScroll: public core::SimpleMouseInput
+		{
+			bool m_isVertical;
+			int m_amount;
+			unsigned int m_delay;
+		public:
+			MyMouseScroll(std::string const & param, bool isEnabled,
+				bool verticalScroll, int amount, //TODO: use type system to distinguish the boolean flags and int values (so that they are not mixed up)
+				unsigned int delayAfterScroll) :
+				core::SimpleMouseInput(param, isEnabled), m_isVertical(verticalScroll),
+				m_amount(amount), m_delay(delayAfterScroll) {
+			}
+			void execute() override {
+				if (enabled) {
+					ROBOT_NS::Mouse mouse;
+
+					if (m_isVertical) {
+						mouse.AutoDelay = m_delay;
+						mouse.ScrollV(m_amount);
+					} else {
+						// Note: this is a workaround for the horizontal scroll. We can't just call mouse.ScrollH(m_amount) here because of the issue in the windows implementation of horizontal scrolling.
+						// It turns out, that the sendInput() function does not simulate horizontal scroll for several clicks (it assumes that it is the 'wheel tilt' operations)
+						// So, the robot's ScrollH() function will act incorrectly here - it will alwyas scroll one unit, regardless to the actual integer value, which is passed to it.
+						// Caution: This workaround could become very slow. For big numbers it will lock up the hat tool for quite a long time (simulation of each of the scrolling operations is quite slow).
+						// TODO: remove this workaround after the scrolH() is fixed in the robot library.
+						if (m_amount != 0) {
+							auto iterationsCount = (m_amount > 0) ? m_amount : -m_amount;
+							auto scrollDirection = (m_amount > 0) ? 1 : -1;
+							for (int i = 0; i < iterationsCount; ++i) {
+								mouse.ScrollH(scrollDirection);
+							}
+						}
+						ROBOT_NS::Timer::Sleep(m_delay);
+					}
+				}
+			}
+		};
+		
 		class MySleepOperation: public core::SimpleSleepOperation
 		{
 			
@@ -266,9 +340,16 @@ extern bool SHOULD_USE_SCANCODES;
 		};
 
 		auto lambdaForMouseInputObjectsCreation = [&] (std::string const & param, core::CommandID const & commandID, size_t ) {
-			auto parameterizationParseResult = parseMouseInputCommandInfoString(param);
-			//TODO:add support for scrolling also
-			return std::make_shared<MyMouseInput>(param, true, parameterizationParseResult.first, parameterizationParseResult.second, keyboard_intervals);
+			auto result = std::shared_ptr<core::SimpleMouseInput>{};
+			if (core::ConfigFilesKeywords::MouseButtonTypes::isScrollingEvent(param)) {
+				auto scrollInfo = getScrollInfo(param);
+				result = std::make_shared<MyMouseScroll>(
+					param, true, scrollInfo.first, scrollInfo.second, keyboard_intervals);
+			} else {
+				auto parameterizationParseResult = parseMouseInputCommandInfoString(param);
+				result = std::make_shared<MyMouseInput>(param, true, parameterizationParseResult.first, parameterizationParseResult.second, keyboard_intervals);
+			}
+			return result;
 		};
 
 		auto commandsConfig = hat::core::CommandsInfoContainer::parseConfigFile(csvStream, lambdaForKeyboardInputObjectsCreation);
