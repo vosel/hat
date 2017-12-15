@@ -127,15 +127,15 @@ extern bool SHOULD_USE_SCANCODES;
 			{
 				auto buttonTypeStr = std::string{};
 				std::getline(myStream, buttonTypeStr, '@');
-				if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::LeftButton()) {
+				if (buttonTypeStr == core::ConfigFilesKeywords::MouseEventTypes::LeftButton()) {
 					buttonType = ROBOT_NS::Button::ButtonLeft;
-				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::RightButton()) {
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseEventTypes::RightButton()) {
 					buttonType = ROBOT_NS::Button::ButtonRight;
-				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::MiddleButton()) {
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseEventTypes::MiddleButton()) {
 					buttonType = ROBOT_NS::Button::ButtonMid;
-				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::X1Button()) {
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseEventTypes::X1Button()) {
 					buttonType = ROBOT_NS::Button::ButtonX1;
-				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::X2Button()) {
+				} else if (buttonTypeStr == core::ConfigFilesKeywords::MouseEventTypes::X2Button()) {
 					buttonType = ROBOT_NS::Button::ButtonX2;
 				} else {
 					std::stringstream error;
@@ -164,20 +164,20 @@ extern bool SHOULD_USE_SCANCODES;
 			{
 				auto scrollTypeStr = std::string{};
 				std::getline(myStream, scrollTypeStr, ' ');
-				if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollV()
-					|| scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollV_up())
+				if (scrollTypeStr == core::ConfigFilesKeywords::MouseEventTypes::ScrollV()
+					|| scrollTypeStr == core::ConfigFilesKeywords::MouseEventTypes::ScrollV_up())
 				{
 					is_verticalScroll = true;
 					shouldFlipNumericValue = false;
-				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollV_down()) {
+				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseEventTypes::ScrollV_down()) {
 					is_verticalScroll = true;
 					shouldFlipNumericValue = true;
-				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollH()
-					|| scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollH_right())
+				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseEventTypes::ScrollH()
+					|| scrollTypeStr == core::ConfigFilesKeywords::MouseEventTypes::ScrollH_right())
 				{
 					is_verticalScroll = false;
 					shouldFlipNumericValue = false;
-				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseButtonTypes::ScrollH_left()) {
+				} else if (scrollTypeStr == core::ConfigFilesKeywords::MouseEventTypes::ScrollH_left()) {
 					is_verticalScroll = false;
 					shouldFlipNumericValue = true;
 				} else {
@@ -341,7 +341,7 @@ extern bool SHOULD_USE_SCANCODES;
 
 		auto lambdaForMouseInputObjectsCreation = [&] (std::string const & param, core::CommandID const & commandID, size_t ) {
 			auto result = std::shared_ptr<core::SimpleMouseInput>{};
-			if (core::ConfigFilesKeywords::MouseButtonTypes::isScrollingEvent(param)) {
+			if (core::ConfigFilesKeywords::MouseEventTypes::isScrollingEvent(param)) {
 				auto scrollInfo = getScrollInfo(param);
 				result = std::make_shared<MyMouseScroll>(
 					param, true, scrollInfo.first, scrollInfo.second, keyboard_intervals);

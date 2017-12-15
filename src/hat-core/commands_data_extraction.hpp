@@ -56,7 +56,7 @@ struct ConfigFilesKeywords
 	static std::string const & aggregatedSetOfCommands() { static std::string const result{ "commandSequence" }; return result; };
 	static std::string const & sleepOperationCommand()   { static std::string const result{ "sleepForTimeout" }; return result; };
 	static std::string const & systemCallCommand()       { static std::string const result{ "systemCall" }; return result; };
-	struct MouseButtonTypes {
+	struct MouseEventTypes {
 		static std::string const & LeftButton() { static std::string const result{ "L" }; return result; };
 		static std::string const & RightButton() { static std::string const result{ "R" }; return result; };
 		static std::string const & MiddleButton() { static std::string const result{ "M" }; return result; };
