@@ -43,6 +43,7 @@ LINKAGE_RESTRICTION bool SimpleMouseInput::isEquivalentTo_impl(SimpleMouseInput 
 
 LINKAGE_RESTRICTION bool SimpleSleepOperation::isEquivalentTo_impl(SimpleSleepOperation const & other) const
 {
+	return (enabled == other.enabled) && (m_delay == other.m_delay);
 }
 
 LINKAGE_RESTRICTION bool SystemCall::isEquivalentTo_impl(SystemCall const & other) const
