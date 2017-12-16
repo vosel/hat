@@ -25,7 +25,8 @@ The project has a set of solution and project files for Microsoft Visual Studio 
   * select the target platform (`Win32` or `Win64`)
   * Build the solution
 
- A *lib file will be placed into the `src/external_dependencies/robot/Binaries/[platform]` directory (`[platform]` could be either `Win32` or `Win64`, depending on configuration)
+ A *.lib file will be placed into the `src/external_dependencies/robot/Binaries/[platform]` directory (`[platform]` could be either `Win32` or `Win64`, depending on configuration)
+
  2. Provide the paths for the `boost` include and library directories in order to build the main project:
    * Open the solution file for the main project: `src/hat.sln`
    * Provide the environment variables for the `boost` resources. This is done via the `User-defined macros` section of the project setup window. See the [MSDN documentation page](https://msdn.microsoft.com/en-us/library/669zx6zc.aspx#User-defined-macros) on how to do it. The following variables should be added:
