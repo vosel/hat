@@ -555,40 +555,36 @@ extern bool SHOULD_USE_SCANCODES;
 			auto navigationInfo = IDsForNavigation{ emptyFallbackID, currentPageID };
 			auto contents = createLayoutPage(currentPreprocessedPagePresentation, navigationInfo); ///TODO: add m_selectedEnvironment use here
 
-			if (TOP_PAGES_COUNT > 1) {
-				auto navigationButtons = tau::layout_generation::EvenlySplitLayoutElementsContainer(false);
-				auto pushNavigationButton = [&](size_t destIndex)
-				{
-					if (destIndex < TOP_PAGES_COUNT) {
-						navigationButtons.push(
-							tau::layout_generation::ButtonLayoutElement().note(
-								hat::core::escapeRawUTF8_forJson(currentLayoutState.getPages()[destIndex].getNote()))
-							.switchToAnotherLayoutPageOnClick(tau::common::LayoutPageID(TOP_PAGES_IDS[destIndex])));
-					} else {
-						navigationButtons.push(tau::layout_generation::EmptySpace());
-					}
-				};
-				if (i == 0) {
-					navigationButtons.push(tau::layout_generation::UnevenlySplitElementsPair(
-						tau::layout_generation::ButtonLayoutElement().note("reload").ID(tau::common::ElementID(generateReloadButtonID())),
-						tau::layout_generation::EmptySpace(), false, 0.75));
+			auto navigationButtons = tau::layout_generation::EvenlySplitLayoutElementsContainer(false);
+			auto pushNavigationButton = [&](size_t destIndex)
+			{
+				if (destIndex < TOP_PAGES_COUNT) {
+					navigationButtons.push(
+						tau::layout_generation::ButtonLayoutElement().note(
+							hat::core::escapeRawUTF8_forJson(currentLayoutState.getPages()[destIndex].getNote()))
+						.switchToAnotherLayoutPageOnClick(tau::common::LayoutPageID(TOP_PAGES_IDS[destIndex])));
 				} else {
-					pushNavigationButton(i - 1); // this overflows at zero position, but since the unsigned int overflow is well-defined, we don't have a problem here
+					navigationButtons.push(tau::layout_generation::EmptySpace());
 				}
-				pushNavigationButton(i + 1);
-
-				auto layoutDecorations = tau::layout_generation::UnevenlySplitElementsPair(
-					tau::layout_generation::LabelElement(
-						hat::core::escapeRawUTF8_forJson(selectedEnvCaptionPrefix + currentPreprocessedPagePresentation.getNote())),
-					navigationButtons,
-					true, 0.4);
-
-				m_currentNormalLayout.pushLayoutPage(tau::layout_generation::LayoutPage(currentPageID,
-					tau::layout_generation::UnevenlySplitElementsPair(contents, layoutDecorations, true, 0.75)
-				));
+			};
+			if (i == 0) {
+				navigationButtons.push(tau::layout_generation::UnevenlySplitElementsPair(
+					tau::layout_generation::ButtonLayoutElement().note("reload").ID(tau::common::ElementID(generateReloadButtonID())),
+					tau::layout_generation::EmptySpace(), false, 0.75));
 			} else {
-				m_currentNormalLayout.pushLayoutPage(tau::layout_generation::LayoutPage(currentPageID, contents));
+				pushNavigationButton(i - 1); // this overflows at zero position, but since the unsigned int overflow is well-defined, we don't have a problem here
 			}
+			pushNavigationButton(i + 1);
+
+			auto layoutDecorations = tau::layout_generation::UnevenlySplitElementsPair(
+				tau::layout_generation::LabelElement(
+					hat::core::escapeRawUTF8_forJson(selectedEnvCaptionPrefix + currentPreprocessedPagePresentation.getNote())),
+				navigationButtons,
+				true, 0.4);
+
+			m_currentNormalLayout.pushLayoutPage(tau::layout_generation::LayoutPage(currentPageID,
+				tau::layout_generation::UnevenlySplitElementsPair(contents, layoutDecorations, true, 0.75)
+			));
 		}
 
 		if ((TOP_PAGES_COUNT > 1) && (m_commandsConfig.getEnvironments().size() > 1)) {
