@@ -583,7 +583,7 @@ extern bool SHOULD_USE_SCANCODES;
 				true, 0.4);
 
 			m_currentNormalLayout.pushLayoutPage(tau::layout_generation::LayoutPage(currentPageID,
-				tau::layout_generation::UnevenlySplitElementsPair(contents, layoutDecorations, true, 0.75)
+				tau::layout_generation::UnevenlySplitElementsPair(contents, layoutDecorations, true, 0.85)
 			));
 		}
 
