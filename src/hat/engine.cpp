@@ -302,6 +302,7 @@ extern bool SHOULD_USE_SCANCODES;
 						// So, the robot's ScrollH() function will act incorrectly here - it will alwyas scroll one unit, regardless to the actual integer value, which is passed to it.
 						// Caution: This workaround could become very slow. For big numbers it will lock up the hat tool for quite a long time (simulation of each of the scrolling operations is quite slow).
 						// TODO: remove this workaround after the scrolH() is fixed in the robot library.
+						// Link for the issue on github: https://github.com/Robot/robot/issues/92
 						if (m_amount != 0) {
 							auto iterationsCount = (m_amount > 0) ? m_amount : -m_amount;
 							auto scrollDirection = (m_amount > 0) ? 1 : -1;
