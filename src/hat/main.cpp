@@ -7,6 +7,7 @@
 #include <tau/util/boost_asio_server.h>
 
 #include "engine.hpp"
+#include <set>
 #include <iostream>
 #include <memory>
 
@@ -25,27 +26,42 @@ unsigned int KEYSTROKES_DELAY = 0;
 extern bool SHOULD_USE_SCANCODES = false;
 #endif
 
+#ifdef HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+extern bool SHOULD_HIDE_CONSOLE_WHEN_CLIENTS_ARE_CONNECTED = false;
+#endif //HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
 
 
+class MyEventsDispatcher;
+namespace {
+	bool MONITOR_CONNECTIONS_WITH_HEARTBEATS = true;
+	size_t const UNANSWERED_HEARTBEATS_LIMIT = 5; //after we send this amount of heartbeats without receiving a reply, we should assume that the connection is no longer active.
+	void connectionEstablished(MyEventsDispatcher * dispatcherForTheConnection);
+	void connectionClosed(MyEventsDispatcher * dispatcherForTheConnection);
+}
 class MyEventsDispatcher : public tau::util::BasicEventsDispatcher
 {
 	std::unique_ptr<Engine> m_engine;
+
+	// This variable is used to establish, if the connection is still alive. So, if we receive any packet from the client, this variable is set to 0 (we don't actually need to account for all of the heartbeat packets, we just try to make sure that the client device is still active)
+	size_t m_unanswered_heartbeats_counter;
 public:
 	MyEventsDispatcher(
 		tau::communications_handling::OutgiongPacketsGenerator & outgoingGeneratorToUse) :
-		tau::util::BasicEventsDispatcher(outgoingGeneratorToUse)
+		tau::util::BasicEventsDispatcher(outgoingGeneratorToUse), m_unanswered_heartbeats_counter(0)
 	{
 	};
 
 	virtual void packetReceived_requestProcessingError(
 		std::string const & layoutID, std::string const & additionalData) override
 	{
+		m_unanswered_heartbeats_counter = 0;
 		std::cout << "Error received from client:\nLayoutID: "
 			<< layoutID << "\nError: " << additionalData << "\n";
 	}
 	virtual void packetReceived_buttonClick(
 		tau::common::ElementID const & buttonID) override
 	{
+		m_unanswered_heartbeats_counter = 0;
 		switch (m_engine->buttonOnLayoutClicked(buttonID.getValue())) {
 		case hat::core::FeedbackFromButtonClick::RELOAD_CONFIGS:
 			if (!reloadConfigs()) {
@@ -63,6 +79,8 @@ public:
 	virtual void onClientConnected(
 		tau::communications_handling::ClientConnectionInfo const & connectionInfo) override
 	{
+		m_unanswered_heartbeats_counter = 0;
+		connectionEstablished(this);
 		std::cout << "Client connected: remoteAddr: "
 			<< connectionInfo.getRemoteAddrDump()
 			<< ", localAddr : "
@@ -75,11 +93,30 @@ public:
 	virtual void packetReceived_clientDeviceInfo(
 		tau::communications_handling::ClientDeviceInfo const & info) override
 	{
+		m_unanswered_heartbeats_counter = 0;
 		refreshLayout();
 	}
 	virtual void packetReceived_layoutPageSwitched(tau::common::LayoutPageID const & pageID) override
 	{
+		m_unanswered_heartbeats_counter = 0;
 		m_engine->layoutPageSwitched(pageID);
+	}
+	virtual void packetReceived_heartbeatResponse() override
+	{
+		m_unanswered_heartbeats_counter = 0;
+	}
+public:
+	~MyEventsDispatcher() {
+		connectionClosed(this);
+	}
+	void timeToMonitorConnectionState()
+	{
+		if (m_unanswered_heartbeats_counter >= UNANSWERED_HEARTBEATS_LIMIT) {
+			closeConnection();
+		} else {
+			++m_unanswered_heartbeats_counter;
+			sendPacket_heartbeat();
+		}
 	}
 private:
 	bool reloadConfigs()
@@ -116,6 +153,40 @@ bool checkConfigsForErrors() {
 	return true;
 }
 
+namespace {
+	std::set<MyEventsDispatcher *> activeConnections;
+	void connectionEstablished(MyEventsDispatcher * dispatcherForTheConnection)
+	{
+		activeConnections.insert(dispatcherForTheConnection);
+#ifdef HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+		if (SHOULD_HIDE_CONSOLE_WHEN_CLIENTS_ARE_CONNECTED) {
+			ShowWindow(GetConsoleWindow(), SW_HIDE);
+		}
+#endif // HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+	}
+
+	void connectionClosed(MyEventsDispatcher * dispatcherForTheConnection)
+	{
+		activeConnections.erase(dispatcherForTheConnection);
+#ifdef HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+		if ((activeConnections.size() == 0) && (SHOULD_HIDE_CONSOLE_WHEN_CLIENTS_ARE_CONNECTED)) {
+			ShowWindow(GetConsoleWindow(), SW_SHOW);
+		}
+#endif // HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+	}
+
+	auto const TIMER_INTERVAL = boost::posix_time::seconds{1};
+	void resetTimer(boost::asio::deadline_timer* t)
+	{
+		if (hat::tool::MONITOR_CONNECTIONS_WITH_HEARTBEATS) {
+			for (auto dispatcher : activeConnections) {
+				dispatcher->timeToMonitorConnectionState();
+			}
+			t->expires_from_now(TIMER_INTERVAL);
+			t->async_wait(boost::bind(resetTimer, t));
+		}
+	}
+}
 }// namespace tool
 }// namespace hat 
 
@@ -138,6 +209,10 @@ int main(int argc, char ** argv)
 	auto const USE_SCAN_CODES_FOR_KEYBOARD_EMULATION = "useScanCodes";
 #endif
 
+#ifdef HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+	auto const HIDE_CONSOLE = "hideConsole";
+#endif // HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+
 	namespace po = boost::program_options;
 	short port = 12345;
 	auto desc = po::options_description{ "Allowed options" };
@@ -154,6 +229,9 @@ int main(int argc, char ** argv)
 #ifdef HAT_WINDOWS_SCANCODES_SUPPORT
 		(USE_SCAN_CODES_FOR_KEYBOARD_EMULATION, "If set, the tool will use scan-codes instead of virtual keycodes for keyboard emulation (windows only)")
 #endif
+#ifdef HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+		(HIDE_CONSOLE, "If set, the tool will hide the console window when at least 1 client is connected (windows only)")
+#endif // HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
 		;
 
 	po::variables_map vm;
@@ -182,6 +260,14 @@ int main(int argc, char ** argv)
 		std::cout << "Required option '--" << COMMANDS_CFG << "' not provided. Exiting.\n";
 		return 3;
 	}
+
+#ifdef HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
+	if (vm.count(HIDE_CONSOLE)) {
+		std::cout << "\t\'" << HIDE_CONSOLE << "\' option provided. Will hide the console window when at least one client is connected.\n";
+		hat::tool::SHOULD_HIDE_CONSOLE_WHEN_CLIENTS_ARE_CONNECTED = true;
+		hat::tool::MONITOR_CONNECTIONS_WITH_HEARTBEATS = true;
+	}
+#endif // HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED
 
 	if (vm.count(INPUT_SEQUENCES_CFG)) {
 		hat::tool::INPUT_SEQUENCES_CFG_PATHS = vm[INPUT_SEQUENCES_CFG].as<std::vector<std::string>>();
@@ -239,6 +325,11 @@ int main(int argc, char ** argv)
 	if (hat::tool::checkConfigsForErrors()) {
 		boost::asio::io_service io_service;
 		tau::util::SimpleBoostAsioServer<hat::tool::MyEventsDispatcher>::type s(io_service, port);
+		
+		//This timer is used for the heartbeats generation. If they are not enabled, the timer will not be enabled inside the resetTimer() function:
+		boost::asio::deadline_timer timer(io_service);
+		hat::tool::resetTimer(&timer);
+		
 		std::cout << "Starting server on port " << port << "...\n";
 		s.start();
 		std::cout << "Calling io_service.run()\n";

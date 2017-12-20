@@ -95,7 +95,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -112,7 +112,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -131,7 +131,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
@@ -153,7 +153,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
