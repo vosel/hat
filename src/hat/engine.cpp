@@ -471,6 +471,11 @@ extern bool SHOULD_USE_SCANCODES;
 			TOP_PAGES_IDS.push_back(tau::common::LayoutPageID(generateTrowawayTauIdentifier()));
 		}
 
+		// These 2 variabels are used for the quick jump page - the page, from which the user can jump to any of the pages defined for the given environment.
+		// For each top page, we have a button in this quick jump page, from which the given top page can be reached.
+		auto pagesQuickJumpPageID = tau::common::LayoutPageID{generateTrowawayTauIdentifier()};
+		auto quickJumpPageButtonsContainer = tau::layout_generation::EvenlySplitLayoutElementsContainer(true);
+
 		m_currentNormalLayout = tau::layout_generation::LayoutInfo{};
 
 		//Can't use 'auto' for the lambda type, because this lambda is called recursively, so it's type can't be deduced
@@ -556,26 +561,54 @@ extern bool SHOULD_USE_SCANCODES;
 			auto navigationInfo = IDsForNavigation{ emptyFallbackID, currentPageID };
 			auto contents = createLayoutPage(currentPreprocessedPagePresentation, navigationInfo); ///TODO: add m_selectedEnvironment use here
 
-			auto navigationButtons = tau::layout_generation::EvenlySplitLayoutElementsContainer(false);
-			auto pushNavigationButton = [&](size_t destIndex)
+			// NOTE: This lambda has such an ugly name because it is a hack. because of a limitation to the UnevenlySplitElementsPair object we have to do the following:
+			// Currently we have to provide both of the child elements for it at the moment of construction (contrary to the EvenlySplitLayoutElementsContainer, which allows push() method)
+			// So, we are wrapping the elements of the pair inside the one-element EvenlySplitLayoutElementsContainer objects, from which the result construct is built.
+			// This makes the code a lot more readable and allows for creation of the layout structures, which are impossible to create in other ways right now (c++ language will not allow it)
+			// TODO: remove the excessive EvenlySplitLayoutElementsContainer objects after the TAU library is fixed (the UnevenlySplitElementsPair should get pushRightOrBottom() and pushLeftOrTop() methods, which will replace the current elements stored in it)
+			auto createNavigationButtonWrappedInEvenlySplitLayoutElementsContainer = [&](size_t destIndex) -> tau::layout_generation::EvenlySplitLayoutElementsContainer
 			{
 				if (destIndex < TOP_PAGES_COUNT) {
-					navigationButtons.push(
-						tau::layout_generation::ButtonLayoutElement().note(
+					return tau::layout_generation::EvenlySplitLayoutElementsContainer(false)
+						.push(tau::layout_generation::ButtonLayoutElement().note(
 							hat::core::escapeRawUTF8_forJson(currentLayoutState.getPages()[destIndex].getNote()))
 						.switchToAnotherLayoutPageOnClick(tau::common::LayoutPageID(TOP_PAGES_IDS[destIndex])));
 				} else {
-					navigationButtons.push(tau::layout_generation::EmptySpace());
+					return tau::layout_generation::EvenlySplitLayoutElementsContainer(false)
+						.push(tau::layout_generation::EmptySpace());
 				}
 			};
-			if (i == 0) {
-				navigationButtons.push(tau::layout_generation::UnevenlySplitElementsPair(
-					tau::layout_generation::ButtonLayoutElement().note("reload").ID(tau::common::ElementID(generateReloadButtonID())),
-					tau::layout_generation::EmptySpace(), false, 0.75));
-			} else {
-				pushNavigationButton(i - 1); // this overflows at zero position, but since the unsigned int overflow is well-defined, we don't have a problem here
-			}
-			pushNavigationButton(i + 1);
+
+			auto createReloadButtonSegmentWrappedInEvenlySplitLayoutElementsContainer = [&]() -> tau::layout_generation::EvenlySplitLayoutElementsContainer
+			{
+				return tau::layout_generation::EvenlySplitLayoutElementsContainer(false)
+					.push(tau::layout_generation::UnevenlySplitElementsPair(
+						tau::layout_generation::ButtonLayoutElement().note("reload").ID(tau::common::ElementID(generateReloadButtonID())),
+						tau::layout_generation::EmptySpace(), false, 0.75));
+			};
+
+			auto createMiddleButtonSegmentWrappedInEvenlySplitLayoutElementsContainer = [&]() -> tau::layout_generation::EvenlySplitLayoutElementsContainer
+			{
+				if (TOP_PAGES_COUNT > 1) {
+					return tau::layout_generation::EvenlySplitLayoutElementsContainer(false)
+						.push(tau::layout_generation::ButtonLayoutElement().note("*").switchToAnotherLayoutPageOnClick(pagesQuickJumpPageID)).ID(tau::common::ElementID(generateTrowawayTauIdentifier()));
+				}
+				return tau::layout_generation::EvenlySplitLayoutElementsContainer(false)
+					.push(tau::layout_generation::EmptySpace());
+			};
+
+			auto leftAndMiddlePartOfNavigationButtons = tau::layout_generation::UnevenlySplitElementsPair(
+				  (i == 0) ? createReloadButtonSegmentWrappedInEvenlySplitLayoutElementsContainer()
+					: createNavigationButtonWrappedInEvenlySplitLayoutElementsContainer(i - 1) // this overflows at zero position, but since the unsigned int overflow is well-defined, we don't have a problem here
+				, createMiddleButtonSegmentWrappedInEvenlySplitLayoutElementsContainer()
+				, false
+				, 0.66);
+
+			auto navigationButtons = tau::layout_generation::UnevenlySplitElementsPair(
+				leftAndMiddlePartOfNavigationButtons
+				, createNavigationButtonWrappedInEvenlySplitLayoutElementsContainer(i + 1) // Note: this may overflow in theory, but it should go past UINT_MAX for that, which is not a realistic issue
+				, false
+				, 0.6);
 
 			auto layoutDecorations = tau::layout_generation::UnevenlySplitElementsPair(
 				tau::layout_generation::LabelElement(
@@ -583,9 +616,22 @@ extern bool SHOULD_USE_SCANCODES;
 				navigationButtons,
 				true, 0.4);
 
+			quickJumpPageButtonsContainer.push(
+				tau::layout_generation::ButtonLayoutElement().note(currentPreprocessedPagePresentation.getNote())
+				.switchToAnotherLayoutPageOnClick(TOP_PAGES_IDS[i]).ID(tau::common::ElementID{generateTrowawayTauIdentifier()})
+			);
+			
+
 			m_currentNormalLayout.pushLayoutPage(tau::layout_generation::LayoutPage(currentPageID,
 				tau::layout_generation::UnevenlySplitElementsPair(contents, layoutDecorations, true, 0.85)
 			));
+		}
+
+		if (TOP_PAGES_COUNT > 1) {
+			auto const PIXELS_PER_BUTTON{ 75 }; // TODO: 14.08.2018 - make this value configurable through command line
+			auto quickJumpPage = tau::layout_generation::LayoutPage(pagesQuickJumpPageID, quickJumpPageButtonsContainer);
+			quickJumpPage.height(TOP_PAGES_COUNT * PIXELS_PER_BUTTON);
+			m_currentNormalLayout.pushLayoutPage(quickJumpPage);
 		}
 
 		if ((TOP_PAGES_COUNT > 1) && (m_commandsConfig.getEnvironments().size() > 1)) {
