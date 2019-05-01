@@ -18,6 +18,7 @@ namespace hat {
 namespace tool {
 std::string LAYOUT_CONFIG_PATH;
 std::string COMMANDS_CONFIG_PATH;
+std::string IMAGE_RESOURCES_CONFIG_PATH;
 std::vector<std::string> INPUT_SEQUENCES_CFG_PATHS;
 std::vector<std::string> VARIABLE_MANAGERS_CFG_PATHS;
 bool STICK_ENV_TO_WINDOW = false;
@@ -122,7 +123,7 @@ private:
 	bool reloadConfigs()
 	{
 		try {
-			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
+			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
 			m_engine->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
 				sendPacket_changeElementNote(elementToUpdate, newTextValue);
 				
@@ -144,7 +145,7 @@ bool checkConfigsForErrors() {
 
 	try {
 		std::cout << "Checking configuration files for errors ...\n";
-		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
+		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
 		std::cout << "\t... done.\n";
 	} catch (std::runtime_error & e) {
 		std::cerr << "\n --- Error during reading of the config files at startup:\n" << e.what() << "\n";
@@ -203,6 +204,9 @@ int main(int argc, char ** argv)
 	auto const INPUT_SEQUENCES_CFG = "input_sequences";
 	auto const VARIABLE_MANAGERS_CFG = "variable_managers";
 	auto const LAYOUT_CFG = "layout";
+#ifdef HAT_IMAGES_SUPPORT
+	auto const IMAGES_CFG = "image_resources";
+#endif // HAT_IMAGES_SUPPORT
 	auto const STICK_ENV_TO_WIN = "stickEnvToWindow";
 
 #ifdef HAT_WINDOWS_SCANCODES_SUPPORT
@@ -224,6 +228,9 @@ int main(int argc, char ** argv)
 		(COMMANDS_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the information about commands configurations for each of the environments")
 		(INPUT_SEQUENCES_CFG, po::value<std::vector<std::string>>()->multitoken()->composing(), "Filepath(s) to the configuration file(s) for the input sequences (may be omitted). Multiple config files of this type are allowed.")
 		(VARIABLE_MANAGERS_CFG, po::value<std::vector<std::string>>()->multitoken()->composing(), "Filepath(s) to the configuration file(s) for describing the behaviour of the internal variables, which chould be displayed on the UI for the user (may be ommitted).")
+#ifdef HAT_IMAGES_SUPPORT
+		(IMAGES_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the information about images for the buttons (only png images are supported right now)")
+#endif // HAT_IMAGES_SUPPORT
 		(LAYOUT_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the layout information")
 		(STICK_ENV_TO_WIN, "If set, the tool will require the user to specify a target window for each environment selected")
 #ifdef HAT_WINDOWS_SCANCODES_SUPPORT
@@ -289,6 +296,14 @@ int main(int argc, char ** argv)
 		std::cout << "]\n";
 	}
 
+#ifdef HAT_IMAGES_SUPPORT
+	if (vm.count(IMAGES_CFG)) {
+		hat::tool::IMAGE_RESOURCES_CONFIG_PATH = vm[IMAGES_CFG].as<std::string>();
+		std::cout << "Image resources config file: '" << hat::tool::IMAGE_RESOURCES_CONFIG_PATH << "'\n";
+	}
+#endif //HAT_IMAGES_SUPPORT
+
+
 	if (vm.count(LAYOUT_CFG)) {
 		hat::tool::LAYOUT_CONFIG_PATH = vm[LAYOUT_CFG].as<std::string>();
 		std::cout << "Layout config file: " << hat::tool::LAYOUT_CONFIG_PATH << "\n";
@@ -296,6 +311,7 @@ int main(int argc, char ** argv)
 		std::cout << "Required option '--" << LAYOUT_CFG << "' not provided. Exiting.\n";
 		return 4;
 	}
+
 	if (vm.count(STICK_ENV_TO_WIN)) {
 		if (hat::tool::Engine::canStickToWindows()) {
 			hat::tool::STICK_ENV_TO_WINDOW = true;
