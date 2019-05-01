@@ -10,3 +10,6 @@
 [submodule "src/external_dependencies/libpng"]
 	path = src/external_dependencies/libpng
 	url = https://github.com/glennrp/libpng
+[submodule "src/external_dependencies/zlib"]
+	path = src/external_dependencies/zlib
+	url = https://github.com/madler/zlib
