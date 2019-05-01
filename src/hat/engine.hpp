@@ -3,6 +3,9 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
+#ifndef HAT_ENGINE_HPP
+#define HAT_ENGINE_HPP
+
 #include "../hat-core/abstract_engine.hpp"
 #include "../hat-core/commands_data_extraction.hpp"
 #include "../hat-core/user_defined_layout.hpp"
@@ -72,3 +75,5 @@ public:
 
 } //namespace tool 
 } //namespace hat 
+
+#endif //HAT_ENGINE_HPP
