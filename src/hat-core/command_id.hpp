@@ -6,27 +6,16 @@
 #ifndef _COMMAND_ID_HPP
 #define _COMMAND_ID_HPP
 
-#include <string>
+#include "string_id.hpp"
 namespace hat {
 namespace core {
 
-class CommandID // TODO: rename to something like 'ButtonActionID' (since it is not only used for commands, but also for other stuff like selector IDs)
-{
-	std::string m_value;
+class CommandID: public StringID<CommandID> {
 public:
-	CommandID() {};
-	explicit CommandID(std::string const & value) : m_value(value) {};
-	std::string const & getValue() const;
-	bool operator == (CommandID const & other) const;
-	bool operator < (CommandID const & other) const;
-	bool nonEmpty() const;
+	CommandID() : StringID() {}
+	explicit CommandID(std::string const & value) : StringID(value) {};
 };
-
 } //namespace core
 } //namespace hat
-
-#ifdef HAT_CORE_HEADERONLY_MODE
-#include "command_id.cpp"
-#endif //HAT_CORE_HEADERONLY_MODE
 
 #endif //_COMMAND_ID_HPP

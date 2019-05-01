@@ -10,9 +10,6 @@
     <ClCompile Include="abstract_engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="command_id.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="commands_data_extraction.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -55,6 +52,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="variables_manager.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="string_id.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
