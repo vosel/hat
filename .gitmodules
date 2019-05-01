@@ -7,3 +7,6 @@
 [submodule "src/external_dependencies/Catch"]
 	path = src/external_dependencies/Catch
 	url = https://github.com/philsquared/Catch
+[submodule "src/external_dependencies/libpng"]
+	path = src/external_dependencies/libpng
+	url = https://github.com/glennrp/libpng
