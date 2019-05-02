@@ -40,7 +40,7 @@ extern bool SHOULD_USE_SCANCODES;
 
 	bool Engine::shouldShowEnvironmentSelectionPage() const
 	{
-		return m_commandsConfig.m_environments.size() > 1;
+		return m_commandsConfig.getEnvironments().size() > 1;
 	}
 
 	bool Engine::setNewEnvironment(size_t environmentIndex)

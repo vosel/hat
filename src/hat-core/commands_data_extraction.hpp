@@ -254,9 +254,8 @@ struct CommandsInfoContainer
 	typedef std::vector<std::string> EnvsContainer;
 	typedef std::vector<Command> CommandsContainer;
 	typedef std::map<CommandID, size_t> CommandsMap; //Probably don't need this
-
-	EnvsContainer m_environments;
 private: //TODO: make all the fields in this class private
+	EnvsContainer m_environments;
 	VariablesDataForEnvironments m_variables;
 public:
 	VariablesDataForEnvironments & getVariablesManagers() { return m_variables; };
