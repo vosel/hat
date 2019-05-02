@@ -176,13 +176,16 @@ LINKAGE_RESTRICTION CommandsInfoContainer::CommandsContainer const & CommandsInf
 	return m_commandsList;
 }
 
-LINKAGE_RESTRICTION std::pair<bool, size_t> CommandsInfoContainer::getEnvironmentIndex(std::string const & environmentStringId) const
-{
-	auto begin = std::begin(m_environments);
-	auto end = std::end(m_environments);
+namespace {
+
+std::pair<bool, size_t> util_getEnvironmentIndex(CommandsInfoContainer::EnvsContainer const & environmentsContainer, std::string const & environmentStringId) {
+	auto begin = std::begin(environmentsContainer);
+	auto end = std::end(environmentsContainer);
 
 	auto foundElem = std::find(begin, end, environmentStringId);
 	return {foundElem != end, std::distance(begin, foundElem)};
+}
+
 }
 
 LINKAGE_RESTRICTION CommandsInfoContainer::EnvsContainer const & CommandsInfoContainer::getEnvironments() const
@@ -280,16 +283,16 @@ ValueType getElementOrThrow(
 void util_parseEnvironmentsEnablingString(
 	std::string const & stringToParse, 
 	std::vector<char> & flagsForEnabledEnvironments,
-	CommandsInfoContainer const & environmentToIndexConverter,
+	CommandsInfoContainer::EnvsContainer const & environmentsList,
 	std::string const & configTypeForErrorMessage)
 {
 	if (stringToParse == "*") {
 		flagsForEnabledEnvironments.assign(
-			environmentToIndexConverter.getEnvironments().size(), 1); // setting the flags to 'all of the environments enabled'
+			environmentsList.size(), 1); // setting the flags to 'all of the environments enabled'
 	} else {
 		auto elements = splitTheRow(stringToParse, ',');
 		for (auto & environment : elements) {
-			auto indexFindResult = environmentToIndexConverter.getEnvironmentIndex(environment);
+			auto indexFindResult = util_getEnvironmentIndex(environmentsList, environment);
 			if (indexFindResult.first) {
 				flagsForEnabledEnvironments[indexFindResult.second] = 1; // enable the given environment
 			} else {
@@ -369,7 +372,7 @@ public:
 				throw std::runtime_error("Unsupported data type"); //TODO: add better error message here
 			}
 		} else if (indexForString == 5) { //determine the environments, for which this command is enabled from the environments string:
-			util_parseEnvironmentsEnablingString(extractedString, m_shouldEnableCommandForGivenEnv, m_targetContainerRef, "input sequences file");
+			util_parseEnvironmentsEnablingString(extractedString, m_shouldEnableCommandForGivenEnv, m_targetContainerRef.getEnvironments(), "input sequences file");
 		} else if (indexForString == 6) {
 			m_commandData = extractedString;
 		} else {
@@ -497,7 +500,7 @@ public:
 					error << "Error: no environments specified for the variable operation. It will have no effect during runtime. This is not allowed in variable manager's configuratoin. Either add at least one environment, or comment this line out.";
 					throw std::runtime_error(error.str());
 				}
-				util_parseEnvironmentsEnablingString(extractedString, m_shouldEnableCommandForGivenEnv, m_targetContainerRef, "input sequences file");
+				util_parseEnvironmentsEnablingString(extractedString, m_shouldEnableCommandForGivenEnv, m_targetContainerRef.getEnvironments(), "input sequences file");
 				if (!moreDataInStream) {
 					throwOnNotEnoughArguments();
 				}
@@ -722,7 +725,7 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::storeCommandObject(CommandID con
 LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, CommandsInfoContainer const & toDump)
 {
 	//TODO: add proper implementation here
-	for (auto const & environment : toDump.m_environments) {
+	for (auto const & environment : toDump.getEnvironments()) {
 		target << environment << ',';
 	}
 	return target;

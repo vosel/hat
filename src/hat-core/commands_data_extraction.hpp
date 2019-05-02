@@ -254,9 +254,8 @@ struct CommandsInfoContainer
 	typedef std::vector<std::string> EnvsContainer;
 	typedef std::vector<Command> CommandsContainer;
 	typedef std::map<CommandID, size_t> CommandsMap; //Probably don't need this
-
-	EnvsContainer m_environments;
 private: //TODO: make all the fields in this class private
+	EnvsContainer m_environments;
 	VariablesDataForEnvironments m_variables;
 public:
 	VariablesDataForEnvironments & getVariablesManagers() { return m_variables; };
@@ -286,7 +285,6 @@ public:
 	bool hasCommandID(CommandID const & commandID) const;
 	size_t getCommandIndex(CommandID const & commandID) const;
 	EnvsContainer const & getEnvironments() const;
-	std::pair<bool, size_t> getEnvironmentIndex(std::string const & environmentStringId) const;
 	CommandsContainer const & getAllCommands() const;
 	static CommandsInfoContainer parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
 	void consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder, SleepInputsFactoryMethod sleep_objects_builder);
