@@ -286,7 +286,6 @@ public:
 	bool hasCommandID(CommandID const & commandID) const;
 	size_t getCommandIndex(CommandID const & commandID) const;
 	EnvsContainer const & getEnvironments() const;
-	std::pair<bool, size_t> getEnvironmentIndex(std::string const & environmentStringId) const;
 	CommandsContainer const & getAllCommands() const;
 	static CommandsInfoContainer parseConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder);
 	void consumeInputSequencesConfigFile(std::istream & dataSource, HotkeyCombinationFactoryMethod hotkey_builder, MouseInputsFactoryMethod mouse_inputs_builder, SleepInputsFactoryMethod sleep_objects_builder);

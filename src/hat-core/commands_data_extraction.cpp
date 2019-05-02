@@ -187,10 +187,6 @@ std::pair<bool, size_t> util_getEnvironmentIndex(CommandsInfoContainer::EnvsCont
 }
 
 }
-LINKAGE_RESTRICTION std::pair<bool, size_t> CommandsInfoContainer::getEnvironmentIndex(std::string const & environmentStringId) const
-{
-	return util_getEnvironmentIndex(m_environments, environmentStringId);
-}
 
 LINKAGE_RESTRICTION CommandsInfoContainer::EnvsContainer const & CommandsInfoContainer::getEnvironments() const
 {
