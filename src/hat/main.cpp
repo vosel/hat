@@ -19,6 +19,7 @@ namespace tool {
 std::string LAYOUT_CONFIG_PATH;
 std::string COMMANDS_CONFIG_PATH;
 std::string IMAGE_RESOURCES_CONFIG_PATH;
+std::string COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH;
 std::vector<std::string> INPUT_SEQUENCES_CFG_PATHS;
 std::vector<std::string> VARIABLE_MANAGERS_CFG_PATHS;
 bool STICK_ENV_TO_WINDOW = false;
@@ -123,7 +124,7 @@ private:
 	bool reloadConfigs()
 	{
 		try {
-			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
+			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
 			m_engine->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
 				sendPacket_changeElementNote(elementToUpdate, newTextValue);
 				
@@ -145,7 +146,7 @@ bool checkConfigsForErrors() {
 
 	try {
 		std::cout << "Checking configuration files for errors ...\n";
-		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
+		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
 		std::cout << "\t... done.\n";
 	} catch (std::runtime_error & e) {
 		std::cerr << "\n --- Error during reading of the config files at startup:\n" << e.what() << "\n";
@@ -205,7 +206,8 @@ int main(int argc, char ** argv)
 	auto const VARIABLE_MANAGERS_CFG = "variable_managers";
 	auto const LAYOUT_CFG = "layout";
 #ifdef HAT_IMAGES_SUPPORT
-	auto const IMAGES_CFG = "image_resources";
+	auto const IMAGES_PHYSICAL_INFO_CFG = "image_resources_cfg";
+	auto const IMAGE_ID_2_COMMAND_ID_CFG = "images_to_commands_cfg";
 #endif // HAT_IMAGES_SUPPORT
 	auto const STICK_ENV_TO_WIN = "stickEnvToWindow";
 
@@ -229,7 +231,8 @@ int main(int argc, char ** argv)
 		(INPUT_SEQUENCES_CFG, po::value<std::vector<std::string>>()->multitoken()->composing(), "Filepath(s) to the configuration file(s) for the input sequences (may be omitted). Multiple config files of this type are allowed.")
 		(VARIABLE_MANAGERS_CFG, po::value<std::vector<std::string>>()->multitoken()->composing(), "Filepath(s) to the configuration file(s) for describing the behaviour of the internal variables, which chould be displayed on the UI for the user (may be ommitted).")
 #ifdef HAT_IMAGES_SUPPORT
-		(IMAGES_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the information about images for the buttons (only png images are supported right now)")
+		(IMAGES_PHYSICAL_INFO_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the information about images for the buttons (only png images are supported right now)")
+		(IMAGE_ID_2_COMMAND_ID_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the linking information between images and the commands+environments in the system")
 #endif // HAT_IMAGES_SUPPORT
 		(LAYOUT_CFG, po::value<std::string>(), "Filepath to the configuration file, holding the layout information")
 		(STICK_ENV_TO_WIN, "If set, the tool will require the user to specify a target window for each environment selected")
@@ -297,12 +300,21 @@ int main(int argc, char ** argv)
 	}
 
 #ifdef HAT_IMAGES_SUPPORT
-	if (vm.count(IMAGES_CFG)) {
-		hat::tool::IMAGE_RESOURCES_CONFIG_PATH = vm[IMAGES_CFG].as<std::string>();
-		std::cout << "Image resources config file: '" << hat::tool::IMAGE_RESOURCES_CONFIG_PATH << "'\n";
+	{
+		auto physicalConfigsCount = vm.count(IMAGES_PHYSICAL_INFO_CFG);
+		auto img2commandConfigsCount = vm.count(IMAGE_ID_2_COMMAND_ID_CFG);
+		if (physicalConfigsCount && img2commandConfigsCount) {
+			hat::tool::IMAGE_RESOURCES_CONFIG_PATH = vm[IMAGES_PHYSICAL_INFO_CFG].as<std::string>();
+			hat::tool::COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH = vm[IMAGE_ID_2_COMMAND_ID_CFG].as<std::string>();
+			std::cout << "Image resources config file: '" << hat::tool::IMAGE_RESOURCES_CONFIG_PATH << "'\n";
+			std::cout << "'ImageIDs 2 CommandIDs+EnvID' config file: '" << hat::tool::COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH << "'\n";
+		} else if (!(!physicalConfigsCount && !img2commandConfigsCount)) {
+			std::cout << "Error: only one of the images configs is provided. Need both of them.\n"
+				<< "Please provide both '--" << IMAGES_PHYSICAL_INFO_CFG << "' and '--" << IMAGE_ID_2_COMMAND_ID_CFG << "' parameters";
+			return 6;
+		}
 	}
 #endif //HAT_IMAGES_SUPPORT
-
 
 	if (vm.count(LAYOUT_CFG)) {
 		hat::tool::LAYOUT_CONFIG_PATH = vm[LAYOUT_CFG].as<std::string>();

@@ -193,7 +193,7 @@ extern bool SHOULD_USE_SCANCODES;
 			return std::pair<bool, int> {is_verticalScroll, shouldFlipNumericValue ? -scrollAmount : scrollAmount};
 		}
 	}
-	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
+	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
 	{
 		std::fstream csvStream(commandsCSV.c_str());
 		if (!csvStream.is_open()) {
@@ -385,15 +385,7 @@ extern bool SHOULD_USE_SCANCODES;
 		}
 
 #ifdef HAT_IMAGES_SUPPORT
-		if (imageResourcesConfig.size() > 0) {
-			std::cout << "Starting to read image resources config file '" << imageResourcesConfig << "'\n";
-			std::fstream filestream(imageResourcesConfig.c_str());
-			if (filestream.is_open()) {
-				//TODO: read data from the file stream here
-			} else {
-				std::cout << "  ERROR: could not be opened. Please check the path.\n";
-			}
-		}
+//TODO: add the configs loading code
 #endif //HAT_IMAGES_SUPPORT
 
 		std::fstream configStream(layoutConfig.c_str());
