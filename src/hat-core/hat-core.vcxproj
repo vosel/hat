@@ -32,6 +32,7 @@
     <ClInclude Include="commands_data_extraction.hpp" />
     <ClInclude Include="command_id.hpp" />
     <ClInclude Include="configs_abstraction_layer.hpp" />
+    <ClInclude Include="image_id.hpp" />
     <ClInclude Include="preprocessed_layout.hpp" />
     <ClInclude Include="string_id.hpp" />
     <ClInclude Include="variables_manager.hpp" />

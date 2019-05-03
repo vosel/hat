@@ -7,6 +7,7 @@
 #define _COMMANDS_DATA_EXTRACTION_HPP
 
 #include "command_id.hpp"
+#include "image_id.hpp"
 #include "variables_manager.hpp"
 #include <memory>
 #include <utility>
@@ -293,6 +294,54 @@ public:
 };
 
 std::ostream & operator << (std::ostream & target, CommandsInfoContainer const & toDump);
+
+struct XY_Dimensions
+{
+	size_t x;
+	size_t y;
+	XY_Dimensions(size_t x, size_t y) : x(x), y(y) {};
+
+	bool operator == (XY_Dimensions const & other) {
+		return ((x == other.x) && (y == other.y));
+	}
+};
+struct ImagePhysicalInfo {
+	std::string filepath;
+	XY_Dimensions origin{0, 0};
+	XY_Dimensions size{SIZE_MAX, SIZE_MAX};
+	bool operator == (ImagePhysicalInfo const & other) {
+		return ((filepath == other.filepath) && (origin == other.origin) && (size == other.size));
+	}
+};
+
+struct ImageResourcesInfosContainer {
+	typedef std::map<ImageID, ImagePhysicalInfo> ImagePhysicalPropertiesToID;
+	typedef std::map<CommandID, ImageID> EnvironmentImagesMapping;
+	typedef std::map<std::string, EnvironmentImagesMapping> GlobalImagesMapper;
+private:
+	GlobalImagesMapper m_mapper;
+	CommandsInfoContainer::EnvsContainer m_environments;
+	ImagePhysicalPropertiesToID m_imgIDs;
+public:
+	ImageResourcesInfosContainer(CommandsInfoContainer::EnvsContainer const & environments);
+	void mapPhysicalImageInfoToID(ImageID const & imgID, ImagePhysicalInfo const & imgInfo);
+	void addImageReferenceForAllEnvs(CommandID const & command, ImageID const & imgID);
+	void addImageReferenceForEnv(CommandID const & command, std::string const & env, ImageID const & imgID);
+	EnvironmentImagesMapping const & getImagesInfo(std::string const & environment) const;
+
+	// Note: The images configurations are split into 2 files: 
+	// one maps imageIDs to the physical files, the other maps command+environment to imageID.
+	// This is done on purpose. Adding an additional level of indirection through imageID, we are
+	// able to separate the notion of the physical image from the notion of the command.
+	// This allows, for example, use the same image for several commands without repeating that
+	// image's physical properties in the config file for each of the commands.
+	// Also, it will make the configs easier to work with, because there will be no need to look at the 
+	// physical images infos if the imageIDs are consistently chosen.
+	void consumeImageResourcesConfig(
+		std::istream & imageID2physicalImageConfig, std::istream & commandID2imageIDConfig);
+
+	ImagePhysicalInfo const & getImageInfo(ImageID const & id) const;
+};
 
 } //namespace core
 } //namespace hat

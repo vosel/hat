@@ -721,6 +721,231 @@ LINKAGE_RESTRICTION void CommandsInfoContainer::storeCommandObject(CommandID con
 	m_commandsMap.emplace(commandID, m_commandsList.size());
 	m_commandsList.push_back(commandToStore);
 }
+namespace {
+std::pair<bool, XY_Dimensions> parseXY_dimensionsConfigString(std::string const & toParse)
+{
+	try {
+		std::stringstream myStream(toParse);
+		std::string x_str;
+		std::string y_str;
+		std::getline(myStream, x_str, ',');
+		std::getline(myStream, y_str);
+		auto X = std::stoi(x_str);
+		auto Y = std::stoi(y_str);
+		if ((X < 0) || (Y < 0)) {
+			// TODO: throw an exception here (after unit test is added).
+			// "Negative values not allowed for the image position or dimensions string"
+		}
+		return std::pair<bool, XY_Dimensions>{true, XY_Dimensions{(size_t)X, (size_t)Y}};
+	} catch (...) {
+		return std::pair<bool, XY_Dimensions>{false, XY_Dimensions{0, 0}};
+	}
+}
+void util_reportErrorForTooLittleParametersCount(int parametersCountProvided, std::string const & messageDescribingParametersRequirements) {
+	std::stringstream errorMessage; 
+	errorMessage << "Not enough parameters provided in the configuration file line. Only "
+		<< parametersCountProvided
+		<< " parameters provided. " << messageDescribingParametersRequirements;
+	throw std::runtime_error(errorMessage.str());
+}
+
+//TODO: rename this class
+class ImageResourceConfigurationProcessor_CommandID2ImageID
+{
+	bool m_imageForAllEnvironments{ false };
+	CommandsInfoContainer::EnvsContainer m_envs;
+	std::vector<char> m_shouldEnableCommandForGivenEnv;
+	CommandID m_commandID;
+	ImageID m_imageID;
+
+	void reportErrorForTooLittleParametersCount(int parametersCountProvided) {
+		util_reportErrorForTooLittleParametersCount(parametersCountProvided, 
+			"At least 3 parameters are needed (commandID, environmentsList, imageID)");
+	}
+public:
+	ImageResourceConfigurationProcessor_CommandID2ImageID(CommandsInfoContainer::EnvsContainer const & environmentsList): m_envs(environmentsList) {
+		m_shouldEnableCommandForGivenEnv.assign(
+			environmentsList.size(), 0);
+	}
+	bool operator()(std::string const & extractedString, size_t indexForString, bool moreDataInStream)
+	{
+		if (indexForString == 0) {
+			if (extractedString.size() == 0) {
+				throw std::runtime_error("CommandID is an empty string in the configuration file line. This is not allowed. Please provide valid command id.");
+			}
+			m_commandID = CommandID{extractedString};
+			if (!moreDataInStream) { reportErrorForTooLittleParametersCount(1); }
+		} else if (indexForString == 1) { // Environments in which the image should be enabled
+			if (extractedString == "*") {
+				m_imageForAllEnvironments = true;
+			} else {
+				util_parseEnvironmentsEnablingString(
+					extractedString,
+					m_shouldEnableCommandForGivenEnv,
+					m_envs,
+					"image resources config file");
+			}
+			if (!moreDataInStream) { reportErrorForTooLittleParametersCount(2); }
+		} else if (indexForString == 2) { // ImageID
+			if (extractedString.size() > 0) {
+				m_imageID = ImageID{extractedString};
+			}
+			if (moreDataInStream) {
+				std::stringstream errorMessage; 
+				errorMessage << "Too many parameters are provided in the configuration file line. At most 3 parameters are needed, separated by <TAB> (commandID, environmentsList, imageID)";
+				throw std::runtime_error(errorMessage.str());
+			}
+		}
+		return true;
+	}
+
+	void storeAccumulatedDataTo(ImageResourcesInfosContainer & target)
+	{
+		// Note we have to handle this situation here because it does not work in the operator() above
+		// The problem is that if we have a config line with a trailing '\t' symbol, the splitTheRow() function
+		// Will not treat it as a 'trailing empty line' and will not pass it on (it will just assume, that we reached the end of the line)
+		if (m_imageID.getValue().size() == 0) {
+			throw std::runtime_error("ImageID is an empty string in the configuration file line. This is not allowed. Please provide a valid imageID.");
+		}
+
+		if (m_imageForAllEnvironments) {
+			target.addImageReferenceForAllEnvs(m_commandID, m_imageID);
+		} else {
+			for (size_t i = 0; i < m_envs.size(); ++i) {
+				if (m_shouldEnableCommandForGivenEnv[i] > 0) {
+					target.addImageReferenceForEnv(m_commandID, m_envs[i], m_imageID);
+				}
+			}
+		}
+	}
+};
+
+// TODO: rename this class
+class ImageResourceConfigurationProcessor_ImageID2PhysicalImage
+{
+	ImagePhysicalInfo m_imagePhysicalInfo;
+	ImageID m_imageID;
+
+public:
+	bool operator()(std::string const & extractedString, size_t indexForString, bool moreDataInStream)
+	{
+		if (indexForString == 0) {
+			if (extractedString.size() == 0) { // ImageID
+				throw std::runtime_error("ImageID is an empty string in the configuration file line. This is not allowed. Please provide valid command id.");
+			}
+			m_imageID = ImageID{extractedString};
+			if (!moreDataInStream) { 
+				util_reportErrorForTooLittleParametersCount(
+					1, "At least 2 parameters are needed (imageID, image file path)");
+			}
+		} else if (indexForString == 1) { // Filename for the image
+			if (extractedString.size() > 0) {
+				m_imagePhysicalInfo.filepath = extractedString;
+			} else {
+				throw std::runtime_error("Filename is an empty string in the configuration file line. This is not allowed. Please provide a valid image file name.");
+			}
+		} else if ((indexForString == 2) && (extractedString.size() > 0)) { // [optional] origin in the file
+			auto originPositionInfo = parseXY_dimensionsConfigString(extractedString);
+			if (originPositionInfo.first) {
+				m_imagePhysicalInfo.origin = originPositionInfo.second;
+			} else {
+				//"Could not extract 2 integer values representing position within image"
+				//TODO: throw an exception here
+			}
+		} else if ((indexForString == 3) && (extractedString.size() > 0)) { // [optional] width and height
+			auto sizeInfo = parseXY_dimensionsConfigString(extractedString);
+			if (sizeInfo.first) {
+				m_imagePhysicalInfo.size = sizeInfo.second;
+			} else {
+				//"Could not extract 2 integer values representing sizes of the crop rect"
+				//TODO: throw an exception here
+			}
+			if (moreDataInStream) {
+				std::stringstream errorMessage; 
+				errorMessage << "Too many parameters are provided in the configuration file line. At most 4 parameters are needed, separated by <TAB> (imageID, image filename, crop rect origin [optional], crop rect size [optional])";
+				throw std::runtime_error(errorMessage.str());
+			}
+		}
+		return true;
+	}
+
+	void storeAccumulatedDataTo(ImageResourcesInfosContainer & target)
+	{
+		target.mapPhysicalImageInfoToID(m_imageID, m_imagePhysicalInfo);
+	}
+};
+}
+
+LINKAGE_RESTRICTION ImageResourcesInfosContainer::ImageResourcesInfosContainer(
+	CommandsInfoContainer::EnvsContainer const & environments): m_environments(environments)
+{
+	for (auto & env_id : environments) {
+		m_mapper[env_id];
+	}
+}
+
+LINKAGE_RESTRICTION ImageResourcesInfosContainer::EnvironmentImagesMapping const & ImageResourcesInfosContainer::getImagesInfo(std::string const & environment) const
+{
+	return m_mapper.at(environment);
+}
+
+LINKAGE_RESTRICTION void ImageResourcesInfosContainer::consumeImageResourcesConfig(
+	std::istream & imageID2physicalImageConfig, std::istream & commandID2imageIDConfig)
+{
+	{
+		auto dataLineProcessor = [this](std::string const & lineToProcess) {
+			ImageResourceConfigurationProcessor_ImageID2PhysicalImage rowProcessor{};
+			auto rowElements = splitTheRow(lineToProcess, '\t', rowProcessor);
+			rowProcessor.storeAccumulatedDataTo(*this);
+		};
+		processFileStream(imageID2physicalImageConfig, 0, "imageID -> physical image info config", dataLineProcessor, true);
+	}
+
+	{
+		auto dataLineProcessor = [this](std::string const & lineToProcess) {
+			ImageResourceConfigurationProcessor_CommandID2ImageID rowProcessor{m_environments};
+			auto rowElements = splitTheRow(lineToProcess, '\t', rowProcessor);
+			rowProcessor.storeAccumulatedDataTo(*this);
+		};
+		processFileStream(commandID2imageIDConfig, 0, "commandID+environments -> imageID config", dataLineProcessor, true);
+	}
+}
+
+LINKAGE_RESTRICTION void ImageResourcesInfosContainer::mapPhysicalImageInfoToID(ImageID const & imgID, ImagePhysicalInfo const & imgInfo)
+{
+	if (m_imgIDs.find(imgID) != m_imgIDs.end()) {
+		std::stringstream error;
+		error << "Duplicated image id detected in the config file. This is not allowed. Image id: " << imgID.getValue();
+		throw std::runtime_error(error.str());
+	} else {
+		m_imgIDs[imgID] = imgInfo;
+	}
+}
+
+LINKAGE_RESTRICTION ImagePhysicalInfo const & ImageResourcesInfosContainer::getImageInfo(ImageID const & id) const
+{
+	// This will throw if the image id is not known (which is expected behaviour)
+	return m_imgIDs.at(id);
+}
+
+LINKAGE_RESTRICTION void ImageResourcesInfosContainer::addImageReferenceForAllEnvs(CommandID const & command, ImageID const & imgID)
+{
+	for (auto & elem : m_mapper) {
+		elem.second[command] = imgID;
+	}
+}
+
+LINKAGE_RESTRICTION void ImageResourcesInfosContainer::addImageReferenceForEnv(CommandID const & command, std::string const & env, ImageID const & imgID)
+{
+	auto find_iter = m_mapper.find(env);
+	if (find_iter != m_mapper.end()) {
+		find_iter->second[command] = imgID;
+	} else {
+		std::stringstream error;
+		error << "Unknown environment is referenced in the image resources config: " << env;
+		throw std::runtime_error(error.str());
+	}
+}
 
 LINKAGE_RESTRICTION std::ostream & operator << (std::ostream & target, CommandsInfoContainer const & toDump)
 {

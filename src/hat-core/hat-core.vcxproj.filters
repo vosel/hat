@@ -57,5 +57,8 @@
     <ClInclude Include="string_id.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="image_id.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
