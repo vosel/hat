@@ -40,6 +40,9 @@
     <ClCompile Include="VariablesManagersConfigParsingTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ImageResourcesConfigParsingTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="layout_parsing_verificator.hpp">

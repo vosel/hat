@@ -23,6 +23,7 @@
     <ClCompile Include="commands_parsing_testing_utils.cpp" />
     <ClCompile Include="ConfigsAbstractionLayerTest.cpp" />
     <ClCompile Include="HotkeysCSV_parsingTest.cpp" />
+    <ClCompile Include="ImageResourcesConfigParsingTest.cpp" />
     <ClCompile Include="LayoutConfiguraionParsingTest.cpp" />
     <ClCompile Include="layout_parsing_verificator.cpp" />
     <ClCompile Include="MainTest.cpp" />
