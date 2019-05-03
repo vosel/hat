@@ -98,12 +98,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED /D HAT_IMAGES_SUPPORT %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;..\external_dependencies\libpng\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_LIB32D_DIR);..\external_dependencies\robot\Binaries\Win32\;..\external_dependencies\libpng\projects\vstudio\Release Library\;..\external_dependencies\zlib\contrib\vstudio\vc14\x86\ZlibStatReleaseWithoutAsm\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_LIB32D_DIR);..\external_dependencies\robot\Binaries\Win32\;$(LIBPNG_LIB32D_DIR);$(ZLIB_LIB32D_DIR)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Robotd.lib;libpng16.lib;zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -115,12 +115,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;..\external_dependencies\libpng\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_LIB64D_DIR);..\external_dependencies\robot\Binaries\Win64\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_LIB64D_DIR);..\external_dependencies\robot\Binaries\Win64\;$(LIBPNG_LIB64D_DIR);$(ZLIB_LIB64D_DIR)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Robotd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -134,7 +134,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED /D HAT_IMAGES_SUPPORT %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;..\external_dependencies\libpng\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -142,7 +142,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_LIB32R_DIR);..\external_dependencies\robot\Binaries\Win32\;..\external_dependencies\libpng\projects\vstudio\Release Library\;..\external_dependencies\zlib\contrib\vstudio\vc14\x86\ZlibStatReleaseWithoutAsm\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_LIB32R_DIR);..\external_dependencies\robot\Binaries\Win32\;$(LIBPNG_LIB32R_DIR);$(ZLIB_LIB32R_DIR)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Robot.lib;libpng16.lib;zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -156,14 +156,14 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WIN32_WINNT=0x0501;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/D HAT_CORE_HEADERONLY_MODE /D TAU_HEADERONLY /D HAT_WINDOWS_SCANCODES_SUPPORT /D HAT_WINDOWS_CONSOLE_HIDING_FEATURE_SUPPORTED %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;..\external_dependencies\libpng\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BOOST_INCLUDE_DIR);..\external_dependencies\tau\src\cpp\;$(LIBPNG_INCLUDE_DIR)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(BOOST_LIB64R_DIR);..\external_dependencies\robot\Binaries\Win64\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(BOOST_LIB64R_DIR);..\external_dependencies\robot\Binaries\Win64\;$(LIBPNG_LIB64R_DIR);$(ZLIB_LIB64R_DIR)</AdditionalLibraryDirectories>
       <AdditionalDependencies>Robot.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
