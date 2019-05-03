@@ -318,6 +318,7 @@ struct ImageResourcesInfosContainer {
 	typedef std::map<ImageID, ImagePhysicalInfo> ImagePhysicalPropertiesToID;
 	typedef std::map<CommandID, ImageID> EnvironmentImagesMapping;
 	typedef std::map<std::string, EnvironmentImagesMapping> GlobalImagesMapper;
+	typedef std::vector<std::pair<ImageID, ImagePhysicalInfo>> ImagesInfoList;
 private:
 	GlobalImagesMapper m_mapper;
 	CommandsInfoContainer::EnvsContainer m_environments;
@@ -340,7 +341,14 @@ public:
 	void consumeImageResourcesConfig(
 		std::istream & imageID2physicalImageConfig, std::istream & commandID2imageIDConfig);
 
-	ImagePhysicalInfo const & getImageInfo(ImageID const & id) const;
+	ImagePhysicalInfo const & getImageInfo(ImageID const & ) const;
+	std::pair<bool, ImageID> getImageID(CommandID const &, std::string const &) const;
+	
+	// Helper methods for packaging all the image information in simple container
+	// These methdos are called once per the config refresh, so there is no need to cache their results.
+	// Note: if the architecture changes in the future, maybe will need to rework this part of the class's logic.
+	ImagesInfoList getAllRegisteredImages() const;
+	std::vector<ImageID> getAllRegisteredImageIDs() const;
 };
 
 } //namespace core

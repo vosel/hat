@@ -7,6 +7,9 @@
 #include <tau/util/boost_asio_server.h>
 
 #include "engine.hpp"
+#ifdef HAT_IMAGES_SUPPORT
+#include "images_loader.hpp"
+#endif // HAT_IMAGES_SUPPORT
 #include <set>
 #include <iostream>
 #include <memory>
@@ -46,6 +49,8 @@ class MyEventsDispatcher : public tau::util::BasicEventsDispatcher
 
 	// This variable is used to establish, if the connection is still alive. So, if we receive any packet from the client, this variable is set to 0 (we don't actually need to account for all of the heartbeat packets, we just try to make sure that the client device is still active)
 	size_t m_unanswered_heartbeats_counter;
+	bool m_should_reupload_images {true};
+	ImageBuffersList m_loadedImagesForConfig{};
 public:
 	MyEventsDispatcher(
 		tau::communications_handling::OutgiongPacketsGenerator & outgoingGeneratorToUse) :
@@ -133,12 +138,41 @@ private:
 			std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
 			return false;
 		}
+#ifdef HAT_IMAGES_SUPPORT
+		// loading images:
+		try {
+			std::cout << "DEBUG: loading images \n";
+			m_loadedImagesForConfig.clear();
+			auto imagesToLoad = m_engine->getImagesPhysicalInfos();
+			m_loadedImagesForConfig = loadImages(imagesToLoad);
+
+			std::cout << "   ...: " << m_loadedImagesForConfig.size() << "images loaded\n";
+		} catch (std::runtime_error & e) {
+			std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
+			return false;
+		}
+		m_should_reupload_images = true;
+#endif // HAT_IMAGES_SUPPORT
 		return true;
 	}
 	void refreshLayout()
 	{
 		auto currentLayout = m_engine->getCurrentLayoutJson();
 		sendPacket_resetLayout(currentLayout);
+
+#ifdef HAT_IMAGES_SUPPORT
+		if (m_should_reupload_images) {
+			// Note: we are loading the images into memory in reloadConfig(), but uploading them
+			// to the client _after_ the main layout.
+			// Since the main layout does not have images (it is environment selection layout),
+			// the uploading of images could be done after it.
+			// This will make the initial loading feel a little bit snappier.
+			m_should_reupload_images = false;
+			for (auto & imageInfo : m_loadedImagesForConfig) {
+				sendPacket_putImage(imageInfo.first, imageInfo.second);
+			}
+		}
+#endif // HAT_IMAGES_SUPPORT
 	}
 };
 

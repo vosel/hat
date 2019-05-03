@@ -48,9 +48,12 @@ class Engine : public hat::core::AbstractEngine
 	
 	hat::core::LayoutUserInformation m_layoutInfo;
 	hat::core::CommandsInfoContainer m_commandsConfig;
+	hat::core::ImageResourcesInfosContainer m_imagesConfig;
 
 	Engine(hat::core::LayoutUserInformation const & layoutInfo,
-		hat::core::CommandsInfoContainer const & commandsConfig, bool stickEnvToWindow, unsigned int keystrokes_delay);
+		hat::core::CommandsInfoContainer const & commandsConfig,
+		hat::core::ImageResourcesInfosContainer const & imagesConfig,
+		bool stickEnvToWindow, unsigned int keystrokes_delay);
 
 	bool shouldShowEnvironmentSelectionPage() const;
 	std::string getCurrentLayoutJson_normal() const;
@@ -68,7 +71,9 @@ public:
 	std::string getCurrentLayoutJson() const;
 	void addNoteUpdatingFeedbackCallback(std::function<void (tau::common::ElementID const &, std::string)> callback);
 	void layoutPageSwitched(tau::common::LayoutPageID const & pageID);
-
+	
+	hat::core::ImageResourcesInfosContainer::ImagesInfoList getImagesPhysicalInfos() const;
+	
 	static bool canStickToWindows();
 	static Engine create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals);
 };

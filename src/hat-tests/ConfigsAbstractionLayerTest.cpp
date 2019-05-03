@@ -39,6 +39,12 @@ const auto & getDefaultCommandsInfoContainer()
 	return toReturn;
 }
 
+const auto & getDefaultImagesInfoContainer()
+{
+	static auto toReturn = hat::core::ImageResourcesInfosContainer{getDefaultCommandsInfoContainer().getEnvironments()};
+	return toReturn;
+}
+
 const auto ENV0 = size_t{ 3 };
 const auto ENV1 = size_t{ 2 };
 const auto ENV2 = size_t{ 1 };
@@ -120,7 +126,7 @@ TEST_CASE("test appropriate command buttons disabled", "[configs_abstraction]")
 	verificator.verifyConfigIsOK();
 
 	//verify the generated preprocessed layouts for situations when no ENV is selected, or ENV0, ENV1 or ENV2 is selected:
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer(), getDefaultImagesInfoContainer()};
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -189,7 +195,7 @@ TEST_CASE("test appropriate selectors disabled (if no enabled buttons inside)", 
 	verificator.addRow({ COMMAND_BUTTON_ON_SUBSELECTOR_PAGE_ID });
 	verificator.verifyConfigIsOK();
 
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer(), getDefaultImagesInfoContainer() };
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -258,7 +264,7 @@ TEST_CASE("test correct options picked(buttons and selectors)", "[configs_abstra
 	verificator.verifyConfigIsOK();
 
 	//std::cout << verificator.getAccumulatedConfigText(); //DEBUG
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer(), getDefaultImagesInfoContainer()};
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -306,7 +312,7 @@ TEST_CASE("test that pages with no active buttons are not shown", "[configs_abst
 	verificator.startNewPage(ENV0_2_PAGE_CAPTION);
 	verificator.addRow({ COMMAND_ENABLED_FOR_ENV0_2_ID });
 	verificator.verifyConfigIsOK();
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer() };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), getDefaultCommandsInfoContainer(), getDefaultImagesInfoContainer() };
 	auto layoutWhenENV0isSelected = layoutsGenerator.generateLayoutPresentation(ENV0, true);
 	auto layoutWhenENV1isSelected = layoutsGenerator.generateLayoutPresentation(ENV1, true);
 	auto layoutWhenENV2isSelected = layoutsGenerator.generateLayoutPresentation(ENV2, true);
@@ -347,7 +353,8 @@ TEST_CASE("test that when there is one ENV, we don't show ENV selection page", "
 	verificator.verifyConfigIsOK();
 
 	const auto COMMANDS_INFO_CONTAINER123 = hat::test::simulateParseConfigFileCall(singleENVCommandsConfiguration);
-	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER123 };
+	const auto IMAGES_INFOS_CONTAINER123 = hat::core::ImageResourcesInfosContainer{ COMMANDS_INFO_CONTAINER123.getEnvironments() };
+	auto layoutsGenerator = hat::core::ConfigsAbstractionLayer{ verificator.getAccumulatedConfig(), COMMANDS_INFO_CONTAINER123, IMAGES_INFOS_CONTAINER123 };
 
 	auto tested_layout = layoutsGenerator.generateLayoutPresentation(0, true);
 

@@ -13,9 +13,15 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="images_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="images_loader.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -928,6 +928,36 @@ LINKAGE_RESTRICTION ImagePhysicalInfo const & ImageResourcesInfosContainer::getI
 	return m_imgIDs.at(id);
 }
 
+LINKAGE_RESTRICTION std::pair<bool, ImageID> ImageResourcesInfosContainer::getImageID(CommandID const & commandID, std::string const & environmentID) const
+{
+	auto imagesSpecifiedForEnv = getImagesInfo(environmentID);
+	auto idFindResult = imagesSpecifiedForEnv.find(commandID);
+	if (idFindResult == imagesSpecifiedForEnv.end()) {
+		return std::pair<bool, ImageID>{false, ImageID{}};
+	}
+	return std::pair<bool, ImageID>{true, idFindResult->second};
+}
+
+LINKAGE_RESTRICTION ImageResourcesInfosContainer::ImagesInfoList ImageResourcesInfosContainer::getAllRegisteredImages() const
+{
+	auto result = ImagesInfoList{};
+	result.reserve(m_imgIDs.size());
+	for (auto & element: m_imgIDs) {
+		result.push_back(std::pair<ImageID, ImagePhysicalInfo>(element.first, element.second));
+	}
+	return result;
+}
+
+LINKAGE_RESTRICTION std::vector<ImageID> ImageResourcesInfosContainer::getAllRegisteredImageIDs() const
+{
+	auto result = std::vector<ImageID>{};
+	result.reserve(m_imgIDs.size());
+	for (auto & element: m_imgIDs) {
+		result.push_back(element.first);
+	}
+	return result;
+}
+
 LINKAGE_RESTRICTION void ImageResourcesInfosContainer::addImageReferenceForAllEnvs(CommandID const & command, ImageID const & imgID)
 {
 	for (auto & elem : m_mapper) {

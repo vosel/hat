@@ -19,8 +19,8 @@
 namespace hat {
 namespace core {
 
-LINKAGE_RESTRICTION ConfigsAbstractionLayer::ConfigsAbstractionLayer(LayoutUserInformation const & layoutInfo, CommandsInfoContainer const & commandsConfig)
-	: m_layoutInfo(layoutInfo), m_commandsConfig(commandsConfig)
+LINKAGE_RESTRICTION ConfigsAbstractionLayer::ConfigsAbstractionLayer(LayoutUserInformation const & layoutInfo, CommandsInfoContainer const & commandsConfig, ImageResourcesInfosContainer const & imagesConfig)
+	: m_layoutInfo(layoutInfo), m_commandsConfig(commandsConfig), m_imagesConfig(imagesConfig)
 {
 	for (auto const & command : m_commandsConfig.m_commandsList) {
 		if (m_layoutInfo.contains_selector(command.commandID)) {
@@ -29,7 +29,7 @@ LINKAGE_RESTRICTION ConfigsAbstractionLayer::ConfigsAbstractionLayer(LayoutUserI
 			throw std::runtime_error(error.str()); //TODO: test this
 		}
 	}
-	//TODO: add the verification code here (verify that there are no duplicates in IDs)
+	//TODO: add the verification code here (verify that there are no duplicates in IDs), verify the commands referencing images exist
 }
 
 LINKAGE_RESTRICTION InternalLayoutRepresentation ConfigsAbstractionLayer::generateLayoutPresentation(size_t selectedEnv, bool isEnv_selected)
@@ -40,7 +40,8 @@ LINKAGE_RESTRICTION InternalLayoutRepresentation ConfigsAbstractionLayer::genera
 			activeIDs.insert(command.commandID);
 		}
 	}
-
+	std::string const selectedEnvID = isEnv_selected ? m_commandsConfig.getEnvironments()[selectedEnv] : "";
+	
 	//cannot leave the type of this lambda as 'auto' because of it's recursive nature. TODO: maybe will extract this code outside, so it is easier to maintain and reason about it
 	std::function<std::shared_ptr<InternalLayoutPageRepresentation>(LayoutPageTemplate const &)> createLayoutPage
 		= [&](LayoutPageTemplate const & templateToUse) -> std::shared_ptr<InternalLayoutPageRepresentation>
@@ -88,6 +89,12 @@ LINKAGE_RESTRICTION InternalLayoutRepresentation ConfigsAbstractionLayer::genera
 						auto const & commandID = currentOption.getComandID();
 						if (activeIDs.find(commandID) != activeIDs.end()) { // found the element, for which the button should be created
 							testElement.setCommandButtonAttrs(m_commandsConfig.getCommandPrefs(commandID).commandNote, commandID);
+							if (isEnv_selected) {
+								auto const imageID = m_imagesConfig.getImageID(commandID, selectedEnvID);
+								if (imageID.first) {
+									testElement.setImageID(imageID.second);
+								}
+							}
 							currentRow.push_back(testElement);
 							foundActiveElementForThisPosition = true;
 							break;

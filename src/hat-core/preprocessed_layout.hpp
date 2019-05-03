@@ -7,6 +7,7 @@
 #define _PREPROCESSED_LAYOUT_HPP
 
 #include "command_id.hpp"
+#include "image_id.hpp"
 #include "variables_manager.hpp"
 #include <memory>
 #include <ostream>
@@ -27,6 +28,7 @@ private:
 	size_t switchToAnotherEnvironment;
 	bool shouldSwitchToAnotherEnvironment{ false }; // this is the last possible option - if the button does not reference any command, or shows the options selection page, we will use this.
 	std::string m_note;
+	ImageID m_imageID;
 	bool m_isButton{ false }; // If this flag is set, the element will look like a button, even if it is not active
 	CommandID m_referencedCommandID;
 	VariableID m_referencedVariableID;
@@ -46,6 +48,7 @@ public:
 	InternalLayoutElementRepresentation & referencedCommand(CommandID const & id);
 	InternalLayoutElementRepresentation & setButtonFlag(bool flag);
 	InternalLayoutElementRepresentation & setNote(std::string const & note);
+	InternalLayoutElementRepresentation & setImageID(ImageID const & imgID);
 	InternalLayoutElementRepresentation & setReferencingVariableID(VariableID const & id);
 	InternalLayoutElementRepresentation & resetOptionsPage(std::shared_ptr<InternalLayoutPageRepresentation> optionsPage);
 	InternalLayoutElementRepresentation & setCommandButtonAttrs(std::string const & note, CommandID const & command);
@@ -53,6 +56,7 @@ public:
 
 	std::pair<bool, size_t> switchingToAnotherEnvironment_info() const;
 	std::string getNote() const;
+	ImageID getImageID() const;
 	CommandID getReferencedCommand() const;
 	VariableID getReferencedVariable() const;
 	bool referencesVariable() const { return m_referencesVariable; };

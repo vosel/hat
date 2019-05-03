@@ -17,8 +17,9 @@ class ConfigsAbstractionLayer
 {
 	LayoutUserInformation const & m_layoutInfo;
 	CommandsInfoContainer const & m_commandsConfig;
+	ImageResourcesInfosContainer const & m_imagesConfig;
 public:
-	ConfigsAbstractionLayer(LayoutUserInformation const & layoutInfo, CommandsInfoContainer const & commandsConfig);
+	ConfigsAbstractionLayer(LayoutUserInformation const & layoutInfo, CommandsInfoContainer const & commandsConfig, ImageResourcesInfosContainer const & imagesConfig);
 	InternalLayoutRepresentation generateLayoutPresentation(size_t selectedEnv, bool isEnv_selected);
 };
 } //namespace core

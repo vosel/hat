@@ -20,10 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="engine.cpp" />
+    <ClCompile Include="images_loader.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="engine.hpp" />
+    <ClInclude Include="images_loader.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{37B2374D-B1B2-44EF-B670-BABDF5205124}</ProjectGuid>

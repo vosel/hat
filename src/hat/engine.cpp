@@ -21,12 +21,13 @@ namespace tool {
 extern bool SHOULD_USE_SCANCODES;
 #endif
 	Engine::Engine(hat::core::LayoutUserInformation const & layoutInfo,
-		hat::core::CommandsInfoContainer const & commandsConfig, bool stickEnvToWindow, unsigned int keystrokes_delay) :
+		hat::core::CommandsInfoContainer const & commandsConfig, hat::core::ImageResourcesInfosContainer const & imagesConfig, bool stickEnvToWindow, unsigned int keystrokes_delay) :
 		m_selectedEnvironment(0), isEnv_selected(false),
 		m_stickEnvToWindow(stickEnvToWindow),
 		m_keystrokes_delay(keystrokes_delay),
 		m_layoutInfo(layoutInfo),
-		m_commandsConfig(commandsConfig)
+		m_commandsConfig(commandsConfig),
+		m_imagesConfig(imagesConfig)
 	{
 		if (!shouldShowEnvironmentSelectionPage()) { // if there is only one environment, we don't need to select anything
 			setNewEnvironment(0);
@@ -384,8 +385,23 @@ extern bool SHOULD_USE_SCANCODES;
 			}
 		}
 
+		auto imageResourcesDataAccumulator = hat::core::ImageResourcesInfosContainer{commandsConfig.getEnvironments()};
 #ifdef HAT_IMAGES_SUPPORT
-//TODO: add the configs loading code
+		if (imageResourcesConfig.size() > 0) {
+			std::cout << "Starting to read the image resources config file '" << imageResourcesConfig << "'\n";
+			std::cout << "  And linking them to the commands with environments according to the config file '" << imageId2CommandIdConfig << "'\n";
+			std::fstream img_resources_fstream(imageResourcesConfig.c_str());
+			if (img_resources_fstream.is_open()) {
+				std::fstream img_2_commands_fstream(imageId2CommandIdConfig.c_str());
+				if (img_2_commands_fstream.is_open()) {
+					imageResourcesDataAccumulator.consumeImageResourcesConfig(img_resources_fstream, img_2_commands_fstream);
+				} else {
+					std::cout << "  ERROR: file '" << imageId2CommandIdConfig << "'could not be opened. Please check the path. Images info will not be loaded.\n";
+				}
+			} else {
+				std::cout << "  ERROR: file '" << imageResourcesConfig<< "'could not be opened. Please check the path. Images info will not be loaded.\n";
+			}
+		}
 #endif //HAT_IMAGES_SUPPORT
 
 		std::fstream configStream(layoutConfig.c_str());
@@ -393,7 +409,7 @@ extern bool SHOULD_USE_SCANCODES;
 			throw std::runtime_error("Could not find or open the layout config file: " + layoutConfig);
 		}
 		auto layout = hat::core::LayoutUserInformation::parseConfigFile(configStream);
-		return Engine(layout, commandsConfig, stickEnvToWindow, keyboard_intervals);
+		return Engine(layout, commandsConfig, imageResourcesDataAccumulator, stickEnvToWindow, keyboard_intervals);
 	}
 
 	namespace {
@@ -465,7 +481,7 @@ extern bool SHOULD_USE_SCANCODES;
 		
 		m_currentlyDisplayedVariables.clear(); // Each time we generate the new normal layout, we have to refresh this mapping.
 
-		hat::core::ConfigsAbstractionLayer layer(m_layoutInfo, m_commandsConfig);
+		hat::core::ConfigsAbstractionLayer layer(m_layoutInfo, m_commandsConfig, m_imagesConfig);
 		auto currentLayoutState = layer.generateLayoutPresentation(m_selectedEnvironment, isEnv_selected);
 
 		size_t const TOP_PAGES_COUNT = currentLayoutState.getPages().size();
@@ -502,6 +518,12 @@ extern bool SHOULD_USE_SCANCODES;
 					if (elem.is_button()) {
 						auto toPush = tau::layout_generation::ButtonLayoutElement();
 						toPush.note(hat::core::escapeRawUTF8_forJson(elem.getNote()));
+						{
+							auto imageID_string = elem.getImageID().getValue();
+							if (imageID_string.size() > 0) {
+								toPush.imageID(tau::common::ImageID{imageID_string});
+							}
+						}
 						if (elem.isActive()) {
 							if (elem.getReferencedCommand().nonEmpty()) {
 								size_t commandIndex = m_commandsConfig.getCommandIndex(elem.getReferencedCommand());
@@ -645,6 +667,14 @@ extern bool SHOULD_USE_SCANCODES;
 		}
 		m_currentNormalLayout.setStartLayoutPage(*m_lastTopPageSelected);
 
+		// We always add all the images as the layout-level references.
+		// This way we ensure that the images, which were passed to the client
+		// at the very beginning of the session are not evicted from the client's memory
+		// during the switching of environments.
+		auto allImageIds = m_imagesConfig.getAllRegisteredImageIDs();
+		for (auto & imageID : allImageIds) {
+			m_currentNormalLayout.addImageReference(tau::common::ImageID(imageID.getValue()));
+		}
 		auto resultString = m_currentNormalLayout.getJson();
 		return resultString;
 	}
@@ -655,6 +685,11 @@ extern bool SHOULD_USE_SCANCODES;
 		if (findResult != TOP_PAGES_IDS.end()) {
 			m_lastTopPageSelected = findResult;
 		}
+	}
+	
+	hat::core::ImageResourcesInfosContainer::ImagesInfoList Engine::getImagesPhysicalInfos() const
+	{
+		return m_imagesConfig.getAllRegisteredImages();
 	}
 
 	void Engine::addNoteUpdatingFeedbackCallback(std::function<void (tau::common::ElementID const &, std::string)> callback)

@@ -40,13 +40,19 @@ LINKAGE_RESTRICTION InternalLayoutElementRepresentation & InternalLayoutElementR
 	m_note = note;
 	return *this;
 }
+
+LINKAGE_RESTRICTION InternalLayoutElementRepresentation & InternalLayoutElementRepresentation::setImageID(ImageID const & imgID)
+{
+	m_imageID = imgID;
+	return *this;
+}
+
 LINKAGE_RESTRICTION InternalLayoutElementRepresentation & InternalLayoutElementRepresentation::setReferencingVariableID(VariableID const & id)
 {
 	m_referencedVariableID = id;
 	m_referencesVariable = true;
 	return *this;
 }
-
 
 LINKAGE_RESTRICTION InternalLayoutElementRepresentation & InternalLayoutElementRepresentation::setCommandButtonAttrs(std::string const & note, CommandID const & command)
 {
@@ -109,6 +115,10 @@ LINKAGE_RESTRICTION std::pair<bool, size_t> InternalLayoutElementRepresentation:
 LINKAGE_RESTRICTION std::string InternalLayoutElementRepresentation::getNote() const
 {
 	return m_note;
+}
+LINKAGE_RESTRICTION ImageID InternalLayoutElementRepresentation::getImageID() const
+{
+	return m_imageID;
 }
 
 LINKAGE_RESTRICTION CommandID InternalLayoutElementRepresentation::getReferencedCommand() const
