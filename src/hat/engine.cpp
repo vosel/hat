@@ -194,13 +194,14 @@ extern bool SHOULD_USE_SCANCODES;
 			return std::pair<bool, int> {is_verticalScroll, shouldFlipNumericValue ? -scrollAmount : scrollAmount};
 		}
 	}
-	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals)
+	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals, std::function<void(std::string const &)> loggingCallback)
 	{
 		std::fstream csvStream(commandsCSV.c_str());
 		if (!csvStream.is_open()) {
 			throw std::runtime_error("Could not find or open the commands config file: " + commandsCSV);
 		}
 
+		loggingCallback("Reading " + commandsCSV);
 		class MyHotkeyCombination: public core::SimpleHotkeyCombination
 		{
 			ROBOT_NS::KeyList m_sequence;
@@ -365,6 +366,7 @@ extern bool SHOULD_USE_SCANCODES;
 			if (inputSequencesConfig.size() > 0) {
 				std::cout << "Starting to read input sequences file '" << inputSequencesConfig << "'\n";
 				std::fstream typingsSequensesConfigStream(inputSequencesConfig.c_str());
+				loggingCallback("Reading " + inputSequencesConfig);
 				if (typingsSequensesConfigStream.is_open()) {
 					commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation, lambdaForSleepObjectsCreation);
 				} else {
@@ -377,6 +379,7 @@ extern bool SHOULD_USE_SCANCODES;
 			if (variablesManagersConfig.size() > 0) {
 				std::cout << "Starting to read varaibles managers config file '" << variablesManagersConfig << "'\n";
 				std::fstream filestream(variablesManagersConfig.c_str()); 
+				loggingCallback("Reading " + variablesManagersConfig);
 				if (filestream.is_open()) {
 					commandsConfig.consumeVariablesManagersConfig(filestream);
 				} else {
@@ -394,6 +397,9 @@ extern bool SHOULD_USE_SCANCODES;
 			if (img_resources_fstream.is_open()) {
 				std::fstream img_2_commands_fstream(imageId2CommandIdConfig.c_str());
 				if (img_2_commands_fstream.is_open()) {
+					loggingCallback("Reading images info configs:");
+					loggingCallback("resources info: " + imageResourcesConfig);
+					loggingCallback("imageIds 2 commands mappings: " + imageId2CommandIdConfig);
 					imageResourcesDataAccumulator.consumeImageResourcesConfig(img_resources_fstream, img_2_commands_fstream);
 				} else {
 					std::cout << "  ERROR: file '" << imageId2CommandIdConfig << "'could not be opened. Please check the path. Images info will not be loaded.\n";

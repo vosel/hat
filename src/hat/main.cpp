@@ -141,7 +141,7 @@ private:
 		};
 		refresh_loading_log(loadingDynamicMessage);
 		try {
-			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
+			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, add_line_to_client_onscreen_log));
 			m_engine->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
 				sendPacket_changeElementNote(elementToUpdate, newTextValue);
 				
@@ -152,10 +152,14 @@ private:
 		}
 #ifdef HAT_IMAGES_SUPPORT
 		// loading images:
+		add_line_to_client_onscreen_log("Starting to load images...");
 		try {
 			m_loadedImagesForConfig.clear();
 			auto imagesToLoad = m_engine->getImagesPhysicalInfos();
-			m_loadedImagesForConfig = loadImages(imagesToLoad);
+			m_loadedImagesForConfig = loadImages(imagesToLoad, add_line_to_client_onscreen_log);
+			std::stringstream message;
+			message << " ... done (" << m_loadedImagesForConfig.size() << " bitmaps extracted)";
+			add_line_to_client_onscreen_log(message.str());
 		} catch (std::runtime_error & e) {
 			std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
 			return false;
@@ -188,7 +192,7 @@ bool checkConfigsForErrors() {
 
 	try {
 		std::cout << "Checking configuration files for errors ...\n";
-		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY);
+		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, [](std::string const &){});
 		std::cout << "\t... done.\n";
 	} catch (std::runtime_error & e) {
 		std::cerr << "\n --- Error during reading of the config files at startup:\n" << e.what() << "\n";
