@@ -730,15 +730,13 @@ std::pair<bool, XY_Dimensions> parseXY_dimensionsConfigString(std::string const 
 		std::string y_str;
 		std::getline(myStream, x_str, ',');
 		std::getline(myStream, y_str);
-		auto X = std::stoi(x_str);
-		auto Y = std::stoi(y_str);
-		if ((X < 0) || (Y < 0)) {
-			// TODO: throw an exception here (after unit test is added).
-			// "Negative values not allowed for the image position or dimensions string"
-		}
+		auto X = getUintFromStringOrThrow(x_str);
+		auto Y = getUintFromStringOrThrow(y_str);
 		return std::pair<bool, XY_Dimensions>{true, XY_Dimensions{(size_t)X, (size_t)Y}};
-	} catch (...) {
-		return std::pair<bool, XY_Dimensions>{false, XY_Dimensions{0, 0}};
+	} catch (std::runtime_error const & e) {
+		std::stringstream errorMessage; 
+		errorMessage << "Error occured during dimensions string parsing. String: '" << toParse << "'\nError message:" << e.what();
+		throw std::runtime_error(errorMessage.str());
 	}
 }
 void util_reportErrorForTooLittleParametersCount(int parametersCountProvided, std::string const & messageDescribingParametersRequirements) {
