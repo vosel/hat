@@ -2,6 +2,7 @@
 #include <tau/common/ARGB_image_resource.h>
 
 #include <iostream>
+#include <algorithm>
 
 #include <boost/gil/extension/io/png_io.hpp>
 
@@ -51,17 +52,28 @@ tau::common::ARGB_ImageResource simpleLoadImage(BoostGilImageView const & imageV
 	return result;
 }
 
-tau::common::ARGB_ImageResource simpleLoadImage(hat::core::ImagePhysicalInfo const & toLoad) {
-	auto imgRGBA = boost::gil::rgb8_image_t{};
-	try {
-		boost::gil::png_read_image(toLoad.filepath, imgRGBA);
-	} catch (std::ios_base::failure & exception) {
-		std::cout << exception.what() << "\n";
-		throw std::runtime_error("Could not read one of the images.");
-	}
-	return simpleLoadImage(boost::gil::view(imgRGBA), toLoad);
-}
+//All the objects in the input vector should point to the regions in the same file
+std::vector<tau::common::ARGB_ImageResource> loadImagesFromSameFile(std::string const & file_path,
+					std::vector<hat::core::ImagePhysicalInfo> const & toLoad) {
+	auto result = std::vector<tau::common::ARGB_ImageResource> {};
+	result.reserve(toLoad.size());
+	if (toLoad.size() > 0) {
+		auto imgRGBA = boost::gil::rgb8_image_t{};
+		try {
+			boost::gil::png_read_image(file_path, imgRGBA);
+		} catch (std::ios_base::failure & exception) {
+			std::cout << exception.what() << "\n";
+			throw std::runtime_error("Could not read one of the images.");
+		}
 
+		for (auto & single_crop: toLoad) {
+			if (single_crop.filepath == file_path) {
+				result.push_back(simpleLoadImage(boost::gil::view(imgRGBA), single_crop));
+			}
+		}
+	}
+	return result;
+}
 
 std::vector<std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>> loadImages(
 	std::vector<std::pair<hat::core::ImageID, hat::core::ImagePhysicalInfo>> const & data)
@@ -69,13 +81,26 @@ std::vector<std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>> lo
 	std::vector<std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>> result;
 	result.reserve(data.size());
 
-	//TODO: implement this better - currently we re-read the same image files.
-	// note: we should populate something like this and work with it: std::map<std::string, std::vector<std::pair<hat::core::ImageID, hat::core::ImagePhysicalInfo>>> sorted_data;
-	// the keys should be filenames, so we will be able to process each filename only once, no matter how many crop rects are specified for it.
-	for (auto & element : data) {
-		result.push_back(
-			std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>(
-				tau::common::ImageID(element.first.getValue()), simpleLoadImage(element.second)));
+	typedef std::vector<hat::core::ImageID> CacheOfImgIDs;
+	typedef std::vector<hat::core::ImagePhysicalInfo> CacheOfCropInfos;
+	std::map<std::string, std::pair<CacheOfImgIDs, CacheOfCropInfos>> sorted_data{};
+	for (auto & entry : data) {
+		sorted_data[entry.second.filepath].first.push_back(entry.first);
+		sorted_data[entry.second.filepath].second.push_back(entry.second);
+	}
+
+	for (auto & allImagesForSameFile: sorted_data) {
+		auto load_result = loadImagesFromSameFile(allImagesForSameFile.first, allImagesForSameFile.second.second);
+		auto & imageIDs = allImagesForSameFile.second.first;
+
+		// Package the results into output vector:
+		std::transform(imageIDs.begin(), imageIDs.end(), load_result.begin(), std::back_inserter(result),
+			[](hat::core::ImageID const & imgID, tau::common::ARGB_ImageResource const & image) {
+				//TODO: we should store the image resources inside shared_ptr, so that we don't have to excessively copy it around.
+				return std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource> {
+					tau::common::ImageID{imgID.getValue()}, image
+				};
+			});
 	}
 	return result;
 }
