@@ -75,8 +75,8 @@ std::vector<tau::common::ARGB_ImageResource> loadImagesFromSameFile(std::string 
 	return result;
 }
 
-std::vector<std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>> loadImages(
-	std::vector<std::pair<hat::core::ImageID, hat::core::ImagePhysicalInfo>> const & data)
+ImageBuffersList loadImages(
+	ImageFilesRegionsList const & data)
 {
 	std::vector<std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>> result;
 	result.reserve(data.size());
