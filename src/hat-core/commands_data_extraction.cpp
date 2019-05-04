@@ -730,6 +730,9 @@ std::pair<bool, XY_Dimensions> parseXY_dimensionsConfigString(std::string const 
 		std::string y_str;
 		std::getline(myStream, x_str, ',');
 		std::getline(myStream, y_str);
+		if ((x_str.size() == 0) || (y_str.size() == 0)) {
+			throw std::runtime_error("One of the coordinates is empty string.");
+		}
 		auto X = getUintFromStringOrThrow(x_str);
 		auto Y = getUintFromStringOrThrow(y_str);
 		return std::pair<bool, XY_Dimensions>{true, XY_Dimensions{(size_t)X, (size_t)Y}};
