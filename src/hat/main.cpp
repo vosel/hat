@@ -141,12 +141,9 @@ private:
 #ifdef HAT_IMAGES_SUPPORT
 		// loading images:
 		try {
-			std::cout << "DEBUG: loading images \n";
 			m_loadedImagesForConfig.clear();
 			auto imagesToLoad = m_engine->getImagesPhysicalInfos();
 			m_loadedImagesForConfig = loadImages(imagesToLoad);
-
-			std::cout << "   ...: " << m_loadedImagesForConfig.size() << "images loaded\n";
 		} catch (std::runtime_error & e) {
 			std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
 			return false;
