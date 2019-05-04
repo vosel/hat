@@ -456,10 +456,8 @@ extern bool SHOULD_USE_SCANCODES;
 namespace {
 	std::string generateLoadingLayoutJson(tau::common::LayoutPageID const & pageID, tau::common::ElementID const & logLabel) {
 		namespace lg = tau::layout_generation;
-		auto topElem = lg::EvenlySplitLayoutElementsContainer{ true };
-		topElem.push(lg::LabelElement("Loading configs...\\nPlease wait."));
-		topElem.push(lg::LabelElement("...").ID(logLabel));
-		topElem.push(lg::LabelElement("..."));
+		auto topElem = lg::UnevenlySplitElementsPair{
+			lg::LabelElement("Loading configs...\\nPlease wait."), lg::LabelElement("...").ID(logLabel), true, 0.15};
 		auto resultLayout = lg::LayoutInfo{};
 		resultLayout.pushLayoutPage(lg::LayoutPage(pageID, topElem));
 		return resultLayout.getJson();
