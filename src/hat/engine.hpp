@@ -76,7 +76,9 @@ public:
 	
 	static bool canStickToWindows();
 	static Engine create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals);
-	static std::string const & getLayoutJson_loadingConfigsSplashscreen();
+	
+	typedef std::pair<tau::common::ElementID, std::string> LoadingLayoutDataContainer;
+	static LoadingLayoutDataContainer const & getLayoutJson_loadingConfigsSplashscreen();
 };
 
 } //namespace tool 

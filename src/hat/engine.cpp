@@ -447,16 +447,24 @@ extern bool SHOULD_USE_SCANCODES;
 		abort();
 	}
 
-	std::string const & Engine::getLayoutJson_loadingConfigsSplashscreen()
-	{
+namespace {
+	std::string generateLoadingLayoutJson(tau::common::LayoutPageID const & pageID, tau::common::ElementID const & logLabel) {
 		namespace lg = tau::layout_generation;
 		auto topElem = lg::EvenlySplitLayoutElementsContainer{ true };
 		topElem.push(lg::LabelElement("Loading configs...\\nPlease wait."));
-		topElem.push(lg::LabelElement("..."));
+		topElem.push(lg::LabelElement("...").ID(logLabel));
 		topElem.push(lg::LabelElement("..."));
 		auto resultLayout = lg::LayoutInfo{};
-		resultLayout.pushLayoutPage(lg::LayoutPage(tau::common::LayoutPageID(generateTrowawayTauIdentifier()), topElem));
-		static std::string result = resultLayout.getJson();
+		resultLayout.pushLayoutPage(lg::LayoutPage(pageID, topElem));
+		return resultLayout.getJson();
+	}
+}
+
+	Engine::LoadingLayoutDataContainer const & Engine::getLayoutJson_loadingConfigsSplashscreen()
+	{
+		static auto LOG_ID = tau::common::ElementID{generateTrowawayTauIdentifier()};
+		static LoadingLayoutDataContainer result = LoadingLayoutDataContainer(
+			LOG_ID, generateLoadingLayoutJson(tau::common::LayoutPageID(generateTrowawayTauIdentifier()), LOG_ID));
 		return result;
 	}
 	

@@ -128,7 +128,18 @@ public:
 private:
 	bool reloadConfigs()
 	{
-		sendPacket_resetLayout(Engine::getLayoutJson_loadingConfigsSplashscreen());
+		auto loadingLayoutInfo = Engine::getLayoutJson_loadingConfigsSplashscreen();
+		sendPacket_resetLayout(loadingLayoutInfo.second);
+		std::string loadingDynamicMessage = "load log:";
+		auto refresh_loading_log = [&loadingLayoutInfo, this](std::string const & newMessage) {
+			sendPacket_changeElementNote(loadingLayoutInfo.first, newMessage);
+		};
+		auto add_line_to_client_onscreen_log = [&loadingDynamicMessage, &refresh_loading_log](std::string const & lineToAppendToLog)
+		{
+			loadingDynamicMessage = loadingDynamicMessage + ("\\n" + lineToAppendToLog);
+			refresh_loading_log(loadingDynamicMessage);
+		};
+		refresh_loading_log(loadingDynamicMessage);
 		try {
 			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
 			m_engine->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
