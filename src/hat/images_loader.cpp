@@ -4,6 +4,11 @@
 #include <iostream>
 #include <algorithm>
 
+// These 2 macro definitions are a quickfix for a problem with png_read_and_convert_image() function (see below).
+// Without them the project does not build.
+// Note: took this workaround from here: https://stackoverflow.com/a/2567610
+#define png_infopp_NULL (png_infopp)NULL
+#define int_p_NULL (int*)NULL
 #include <boost/gil/extension/io/png_io.hpp>
 
 #ifdef HAT_IMAGES_SUPPORT
@@ -58,9 +63,9 @@ std::vector<tau::common::ARGB_ImageResource> loadImagesFromSameFile(std::string 
 	auto result = std::vector<tau::common::ARGB_ImageResource> {};
 	result.reserve(toLoad.size());
 	if (toLoad.size() > 0) {
-		auto imgRGBA = boost::gil::rgb8_image_t{};
+		auto imageBuffer = boost::gil::rgb8_image_t{};
 		try {
-			boost::gil::png_read_image(file_path, imgRGBA);
+			boost::gil::png_read_and_convert_image(file_path, imageBuffer);
 		} catch (std::ios_base::failure & exception) {
 			std::cout << exception.what() << "\n";
 			throw std::runtime_error("Could not read one of the images.");
@@ -68,7 +73,7 @@ std::vector<tau::common::ARGB_ImageResource> loadImagesFromSameFile(std::string 
 
 		for (auto & single_crop: toLoad) {
 			if (single_crop.filepath == file_path) {
-				result.push_back(simpleLoadImage(boost::gil::view(imgRGBA), single_crop));
+				result.push_back(simpleLoadImage(boost::gil::view(imageBuffer), single_crop));
 			}
 		}
 	}
