@@ -13,8 +13,8 @@ namespace tool {
 
 template <typename BoostGilImageView>
 tau::common::ARGB_ImageResource simpleLoadImage(BoostGilImageView const & imageView, hat::core::ImagePhysicalInfo const & toLoad) {
-	auto const img_width = imageView.width();
-	auto const img_height = imageView.height();
+	auto const img_width = (size_t)imageView.width();
+	auto const img_height = (size_t)imageView.height();
 	//calculation of the actual crop region
 	auto const crop_x = toLoad.origin.x;
 	auto const crop_y = toLoad.origin.y;
