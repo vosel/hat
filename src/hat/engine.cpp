@@ -447,6 +447,19 @@ extern bool SHOULD_USE_SCANCODES;
 		abort();
 	}
 
+	std::string const & Engine::getLayoutJson_loadingConfigsSplashscreen()
+	{
+		namespace lg = tau::layout_generation;
+		auto topElem = lg::EvenlySplitLayoutElementsContainer{ true };
+		topElem.push(lg::LabelElement("Loading configs...\\nPlease wait."));
+		topElem.push(lg::LabelElement("..."));
+		topElem.push(lg::LabelElement("..."));
+		auto resultLayout = lg::LayoutInfo{};
+		resultLayout.pushLayoutPage(lg::LayoutPage(tau::common::LayoutPageID(generateTrowawayTauIdentifier()), topElem));
+		static std::string result = resultLayout.getJson();
+		return result;
+	}
+	
 	std::string Engine::getCurrentLayoutJson_wrongTopWindowMessage() const
 	{
 		namespace lg = tau::layout_generation;

@@ -128,6 +128,7 @@ public:
 private:
 	bool reloadConfigs()
 	{
+		sendPacket_resetLayout(Engine::getLayoutJson_loadingConfigsSplashscreen());
 		try {
 			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY));
 			m_engine->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
@@ -154,9 +155,6 @@ private:
 	}
 	void refreshLayout()
 	{
-		auto currentLayout = m_engine->getCurrentLayoutJson();
-		sendPacket_resetLayout(currentLayout);
-
 #ifdef HAT_IMAGES_SUPPORT
 		if (m_should_reupload_images) {
 			// Note: we are loading the images into memory in reloadConfig(), but uploading them
@@ -170,6 +168,8 @@ private:
 			}
 		}
 #endif // HAT_IMAGES_SUPPORT
+		auto currentLayout = m_engine->getCurrentLayoutJson();
+		sendPacket_resetLayout(currentLayout);
 	}
 };
 
