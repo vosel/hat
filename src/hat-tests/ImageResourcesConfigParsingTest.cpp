@@ -190,3 +190,58 @@ TEST_CASE("Simple CommandID->ImageID parsing test") {
 						{UNKNOWN_ENV_STRING}), Contains("Unknown environment id"));
 	}
 }
+
+TEST_CASE("Coordinates substring parsing errors test") {
+
+	std::string const errorMessageToMatch{ "Error occured during dimensions string parsing" };
+	std::string const NORMAL_COORDS{ "10,1000" };
+	
+	auto test_problem_coords_string = [&NORMAL_COORDS, &errorMessageToMatch](std::string const & problemCoords) {
+		auto const TESTED_LINE_0 = buildCSVLine({ "IMAGE_ID", "file_path.png", NORMAL_COORDS, problemCoords});
+		auto const TESTED_LINE_1 = buildCSVLine({ "IMAGE_ID", "file_path.png", problemCoords, NORMAL_COORDS});
+		auto const TESTED_LINE_2 = buildCSVLine({ "IMAGE_ID", "file_path.png", problemCoords});
+		REQUIRE_THROWS_WITH(processConfigsLines({ TESTED_LINE_0 }, {}),
+			Catch::Matchers::Contains(errorMessageToMatch));
+		REQUIRE_THROWS_WITH(processConfigsLines({ TESTED_LINE_1 }, {}),
+			Catch::Matchers::Contains(errorMessageToMatch));
+		REQUIRE_THROWS_WITH(processConfigsLines({ TESTED_LINE_2 }, {}),
+			Catch::Matchers::Contains(errorMessageToMatch));
+	};
+
+	std::string const FIRST_COORD_NOT_PROVIDED{ ",1000" };
+	std::string const SECOND_COORD_NOT_PROVIDED_0{ "10," };
+	std::string const SECOND_COORD_NOT_PROVIDED_1{ "10" };
+	WHEN("Some of the coordinates is not provided") {
+		test_problem_coords_string(FIRST_COORD_NOT_PROVIDED);
+		test_problem_coords_string(SECOND_COORD_NOT_PROVIDED_0);
+		test_problem_coords_string(SECOND_COORD_NOT_PROVIDED_1);
+	}
+
+	std::string const NEGATIVE_COORD_0{ "-10,1000" };
+	std::string const NEGATIVE_COORD_1{ "10,-1000" };
+	std::string const NEGATIVE_COORD_2{ "-10,-1000" };
+
+	WHEN("One of the coordinates is negative") {
+		test_problem_coords_string(NEGATIVE_COORD_0);
+		test_problem_coords_string(NEGATIVE_COORD_1);
+		test_problem_coords_string(NEGATIVE_COORD_2);
+	}
+
+	std::string const RANDOM_TEXT_0{ "djfhj,1000" };
+	std::string const RANDOM_TEXT_1{ "1000,djfhj" };
+
+	WHEN("Coordinates don't represent a pair of numbers") {
+		test_problem_coords_string(RANDOM_TEXT_0);
+		test_problem_coords_string(RANDOM_TEXT_1);
+	}
+
+	std::string const FLOAT_POINT_COORD_0{ "234.43,1000" };
+	std::string const FLOAT_POINT_COORD_1{ "1000,234.43" };
+	std::string const FLOAT_POINT_COORD_2{ "1000.91,234.43" };
+
+	WHEN("Coordinates string contain float point numbers") {
+		test_problem_coords_string(FLOAT_POINT_COORD_0);
+		test_problem_coords_string(FLOAT_POINT_COORD_1);
+		test_problem_coords_string(FLOAT_POINT_COORD_2);
+	}
+}
