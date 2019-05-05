@@ -72,8 +72,9 @@ public:
 		switch (m_engine->buttonOnLayoutClicked(buttonID.getValue())) {
 		case hat::core::FeedbackFromButtonClick::RELOAD_CONFIGS:
 			if (!reloadConfigs()) {
-				std::cerr << "Configuration parsing failed. The layout will not be refreshed.\n";
-				break;
+				std::cerr << "Configuration parsing failed. The layout will not be renewed.\n";
+				// Here we fallthrough to refreshing layout call, so that the 'loading...' splashscreen 
+				// is replaced with the originating layout, which caused the reload in the first place.
 			}
 			refreshLayout();
 			break;
@@ -128,6 +129,7 @@ public:
 private:
 	bool reloadConfigs()
 	{
+		auto temporaryEngineObject = std::unique_ptr<Engine>{};
 		auto loadingLayoutInfo = Engine::getLayoutJson_loadingConfigsSplashscreen();
 		sendPacket_resetLayout(loadingLayoutInfo.second);
 		std::string loadingDynamicMessage = "load log:";
@@ -140,9 +142,10 @@ private:
 			refresh_loading_log(loadingDynamicMessage);
 		};
 		refresh_loading_log(loadingDynamicMessage);
+
 		try {
-			m_engine = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, add_line_to_client_onscreen_log));
-			m_engine->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
+			temporaryEngineObject = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, add_line_to_client_onscreen_log));
+			temporaryEngineObject->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
 				sendPacket_changeElementNote(elementToUpdate, newTextValue);
 				
 			});
@@ -155,7 +158,7 @@ private:
 		add_line_to_client_onscreen_log("Starting to load images...");
 		try {
 			m_loadedImagesForConfig.clear();
-			auto imagesToLoad = m_engine->getImagesPhysicalInfos();
+			auto imagesToLoad = temporaryEngineObject->getImagesPhysicalInfos();
 			m_loadedImagesForConfig = loadImages(imagesToLoad, add_line_to_client_onscreen_log);
 			std::stringstream message;
 			message << " ... done (" << m_loadedImagesForConfig.size() << " bitmaps extracted)";
@@ -164,6 +167,9 @@ private:
 			std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
 			return false;
 		}
+		// No errors occured during loading of the configs and images.
+		// Replacing the old engine with the newely created one.
+		m_engine = std::move(temporaryEngineObject);
 		m_should_reupload_images = true;
 #endif // HAT_IMAGES_SUPPORT
 		return true;
