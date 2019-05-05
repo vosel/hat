@@ -79,6 +79,8 @@ public:
 	
 	typedef std::pair<tau::common::ElementID, std::string> LoadingLayoutDataContainer;
 	static LoadingLayoutDataContainer const & getLayoutJson_loadingConfigsSplashscreen();
+	//Platform-independent sleep operation
+	static void sleep(unsigned int millisec);
 };
 
 } //namespace tool 

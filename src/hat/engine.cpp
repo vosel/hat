@@ -17,6 +17,10 @@
 #endif
 namespace hat {
 namespace tool {
+void Engine::sleep(unsigned int millisec)
+{
+	ROBOT_NS::Timer::Sleep(millisec);
+}
 #ifdef HAT_WINDOWS_SCANCODES_SUPPORT
 extern bool SHOULD_USE_SCANCODES;
 #endif
@@ -234,7 +238,7 @@ extern bool SHOULD_USE_SCANCODES;
 					}
 					
 					SendInput (1, &input, sizeof (INPUT));
-					ROBOT_NS::Timer::Sleep (m_keystrokes_delay);
+					sleep(m_keystrokes_delay);
 					return;
 				}
 #endif
