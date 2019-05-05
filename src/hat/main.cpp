@@ -151,6 +151,12 @@ private:
 			});
 		} catch (std::runtime_error & e) {
 			std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
+
+			add_line_to_client_onscreen_log("!!!");
+			add_line_to_client_onscreen_log("!!!");
+			add_line_to_client_onscreen_log("!!!");
+			add_line_to_client_onscreen_log("Error during loading config files. The layout will be restored to previous state in 10 seconds!");
+			Engine::sleep(10000u);
 			return false;
 		}
 #ifdef HAT_IMAGES_SUPPORT
@@ -165,6 +171,12 @@ private:
 			add_line_to_client_onscreen_log(message.str());
 		} catch (std::runtime_error & e) {
 			std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
+
+			add_line_to_client_onscreen_log("!!!");
+			add_line_to_client_onscreen_log("!!!");
+			add_line_to_client_onscreen_log("!!!");
+			add_line_to_client_onscreen_log("Error during loading the images. The layout will be restored to previous state in 10 seconds!");
+			Engine::sleep(10000u);
 			return false;
 		}
 		// No errors occured during loading of the configs and images.
