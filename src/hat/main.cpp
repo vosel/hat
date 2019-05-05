@@ -179,11 +179,11 @@ private:
 			Engine::sleep(10000u);
 			return false;
 		}
+#endif // HAT_IMAGES_SUPPORT
 		// No errors occured during loading of the configs and images.
 		// Replacing the old engine with the newely created one.
 		m_engine = std::move(temporaryEngineObject);
 		m_should_reupload_images = true;
-#endif // HAT_IMAGES_SUPPORT
 		return true;
 	}
 	void refreshLayout()
