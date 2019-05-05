@@ -130,56 +130,60 @@ private:
 	bool reloadConfigs()
 	{
 		auto temporaryEngineObject = std::unique_ptr<Engine>{};
-		auto loadingLayoutInfo = Engine::getLayoutJson_loadingConfigsSplashscreen();
-		sendPacket_resetLayout(loadingLayoutInfo.second);
-		std::string loadingDynamicMessage = "load log:";
-		auto refresh_loading_log = [&loadingLayoutInfo, this](std::string const & newMessage) {
-			sendPacket_changeElementNote(loadingLayoutInfo.first, newMessage);
-		};
-		auto add_line_to_client_onscreen_log = [&loadingDynamicMessage, &refresh_loading_log](std::string const & lineToAppendToLog)
-		{
-			loadingDynamicMessage = loadingDynamicMessage + ("\\n" + lineToAppendToLog);
-			refresh_loading_log(loadingDynamicMessage);
-		};
-		refresh_loading_log(loadingDynamicMessage);
-
 		try {
-			temporaryEngineObject = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, add_line_to_client_onscreen_log));
-			temporaryEngineObject->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
-				sendPacket_changeElementNote(elementToUpdate, newTextValue);
-				
-			});
-		} catch (std::runtime_error & e) {
-			std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
+			auto loadingLayoutInfo = Engine::getLayoutJson_loadingConfigsSplashscreen();
+			sendPacket_resetLayout(loadingLayoutInfo.second);
+			std::string loadingDynamicMessage = "load log:";
+			auto refresh_loading_log = [&loadingLayoutInfo, this](std::string const & newMessage) {
+				sendPacket_changeElementNote(loadingLayoutInfo.first, newMessage);
+			};
+			auto add_line_to_client_onscreen_log = [&loadingDynamicMessage, &refresh_loading_log](std::string const & lineToAppendToLog)
+			{
+				loadingDynamicMessage = loadingDynamicMessage + ("\\n" + lineToAppendToLog);
+				refresh_loading_log(loadingDynamicMessage);
+			};
+			refresh_loading_log(loadingDynamicMessage);
 
-			add_line_to_client_onscreen_log("!!!");
-			add_line_to_client_onscreen_log("!!!");
-			add_line_to_client_onscreen_log("!!!");
-			add_line_to_client_onscreen_log("Error during loading config files. The layout will be restored to previous state in 10 seconds!");
-			Engine::sleep(10000u);
-			return false;
+			try {
+				temporaryEngineObject = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, add_line_to_client_onscreen_log));
+				temporaryEngineObject->addNoteUpdatingFeedbackCallback([this](tau::common::ElementID const & elementToUpdate, std::string const & newTextValue) {
+					sendPacket_changeElementNote(elementToUpdate, newTextValue);
+				
+				});
+			} catch (std::runtime_error & e) {
+				std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
+
+				add_line_to_client_onscreen_log("!!!");
+				add_line_to_client_onscreen_log("!!!");
+				add_line_to_client_onscreen_log("!!!");
+				add_line_to_client_onscreen_log("Error during loading config files. The layout will be restored to previous state in 10 seconds!");
+				Engine::sleep(10000u);
+				throw;
 		}
 #ifdef HAT_IMAGES_SUPPORT
-		// loading images:
-		add_line_to_client_onscreen_log("Starting to load images...");
-		try {
-			m_loadedImagesForConfig.clear();
-			auto imagesToLoad = temporaryEngineObject->getImagesPhysicalInfos();
-			m_loadedImagesForConfig = loadImages(imagesToLoad, add_line_to_client_onscreen_log);
-			std::stringstream message;
-			message << " ... done (" << m_loadedImagesForConfig.size() << " bitmaps extracted)";
-			add_line_to_client_onscreen_log(message.str());
-		} catch (std::runtime_error & e) {
-			std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
+			// loading images:
+			add_line_to_client_onscreen_log("Starting to load images...");
+			try {
+				m_loadedImagesForConfig.clear();
+				auto imagesToLoad = temporaryEngineObject->getImagesPhysicalInfos();
+				m_loadedImagesForConfig = loadImages(imagesToLoad, add_line_to_client_onscreen_log);
+				std::stringstream message;
+				message << " ... done (" << m_loadedImagesForConfig.size() << " bitmaps extracted)";
+				add_line_to_client_onscreen_log(message.str());
+			} catch (std::runtime_error & e) {
+				std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
 
-			add_line_to_client_onscreen_log("!!!");
-			add_line_to_client_onscreen_log("!!!");
-			add_line_to_client_onscreen_log("!!!");
-			add_line_to_client_onscreen_log("Error during loading the images. The layout will be restored to previous state in 10 seconds!");
-			Engine::sleep(10000u);
+				add_line_to_client_onscreen_log("!!!");
+				add_line_to_client_onscreen_log("!!!");
+				add_line_to_client_onscreen_log("!!!");
+				add_line_to_client_onscreen_log("Error during loading the images. The layout will be restored to previous state in 10 seconds!");
+				Engine::sleep(10000u);
+				throw;
+			}
+#endif // HAT_IMAGES_SUPPORT
+		} catch (...) {
 			return false;
 		}
-#endif // HAT_IMAGES_SUPPORT
 		// No errors occured during loading of the configs and images.
 		// Replacing the old engine with the newely created one.
 		m_engine = std::move(temporaryEngineObject);
