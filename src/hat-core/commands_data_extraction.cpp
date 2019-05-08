@@ -311,7 +311,7 @@ size_t getUintFromStringOrThrow(std::string const & toParse)
 	auto pos = toParse.find_first_not_of("0123456789");
 	if (pos != std::string::npos) {
 		std::stringstream error;
-		error << "unexpected symbol in the string representing number (position - " << pos << "): " << toParse;
+		error << "unexpected symbol in the string representing positive integer number (position - " << pos << "): " << toParse;
 		throw std::runtime_error(error.str());
 	}
 	size_t result {0};
