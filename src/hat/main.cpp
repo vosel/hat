@@ -50,7 +50,9 @@ class MyEventsDispatcher : public tau::util::BasicEventsDispatcher
 	// This variable is used to establish, if the connection is still alive. So, if we receive any packet from the client, this variable is set to 0 (we don't actually need to account for all of the heartbeat packets, we just try to make sure that the client device is still active)
 	size_t m_unanswered_heartbeats_counter;
 	bool m_should_reupload_images {true};
+#ifdef HAT_IMAGES_SUPPORT
 	ImageBuffersList m_loadedImagesForConfig{};
+#endif// HAT_IMAGES_SUPPORT
 public:
 	MyEventsDispatcher(
 		tau::communications_handling::OutgiongPacketsGenerator & outgoingGeneratorToUse) :
