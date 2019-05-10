@@ -685,7 +685,7 @@ namespace {
 		if (TOP_PAGES_COUNT > 1) {
 			auto const PIXELS_PER_BUTTON{ 75 }; // TODO: 14.08.2018 - make this value configurable through command line
 			auto quickJumpPage = tau::layout_generation::LayoutPage(pagesQuickJumpPageID, quickJumpPageButtonsContainer);
-			quickJumpPage.height(TOP_PAGES_COUNT * PIXELS_PER_BUTTON);
+			quickJumpPage.height((int)TOP_PAGES_COUNT * PIXELS_PER_BUTTON);
 			m_currentNormalLayout.pushLayoutPage(quickJumpPage);
 		}
 
