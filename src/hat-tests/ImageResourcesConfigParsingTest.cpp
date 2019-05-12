@@ -1,3 +1,8 @@
+// This source file is part of the 'hat' open source project.
+// Copyright (c) 2019, Yuriy Vosel.
+// Licensed under Boost Software License.
+// See LICENSE.txt for the licence information.
+
 #include "../hat-core/command_id.hpp"
 #include "../hat-core/image_id.hpp"
 #include "../hat-core/commands_data_extraction.hpp"

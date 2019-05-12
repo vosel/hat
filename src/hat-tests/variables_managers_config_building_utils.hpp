@@ -1,3 +1,8 @@
+// This source file is part of the 'hat' open source project.
+// Copyright (c) 2017, Yuriy Vosel.
+// Licensed under Boost Software License.
+// See LICENSE.txt for the licence information.
+
 #ifndef	UI_TEXT_VARIABLES_CONFIG_BUILDING_UTILS
 #define UI_TEXT_VARIABLES_CONFIG_BUILDING_UTILS
 

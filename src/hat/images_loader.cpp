@@ -1,3 +1,8 @@
+// This source file is part of the 'hat' open source project.
+// Copyright (c) 2019, Yuriy Vosel.
+// Licensed under Boost Software License.
+// See LICENSE.txt for the licence information.
+
 #include "images_loader.hpp"
 #include <tau/common/ARGB_image_resource.h>
 

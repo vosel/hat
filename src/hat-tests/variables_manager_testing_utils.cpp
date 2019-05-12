@@ -1,3 +1,8 @@
+// This source file is part of the 'hat' open source project.
+// Copyright (c) 2017, Yuriy Vosel.
+// Licensed under Boost Software License.
+// See LICENSE.txt for the licence information.
+
 #include "variables_manager_testing_utils.hpp"
 
 #include "../external_dependencies/Catch/single_include/catch.hpp"
