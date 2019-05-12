@@ -1,5 +1,5 @@
 // This source file is part of the 'hat' open source project.
-// Copyright (c) 2016, Yuriy Vosel.
+// Copyright (c) 2019, Yuriy Vosel.
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 #pragma once
