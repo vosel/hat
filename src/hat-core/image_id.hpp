@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _IMAGE_ID_HPP
-#define _IMAGE_ID_HPP
+#ifndef IMAGE_ID_HPP
+#define IMAGE_ID_HPP
 
 #include "string_id.hpp"
 namespace hat {
@@ -18,4 +18,4 @@ public:
 } //namespace core
 } //namespace hat
 
-#endif //_IMAGE_ID_HPP
+#endif //IMAGE_ID_HPP

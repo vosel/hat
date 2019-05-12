@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _USER_DEFINED_LAYOUT_HPP
-#define _USER_DEFINED_LAYOUT_HPP
+#ifndef USER_DEFINED_LAYOUT_HPP
+#define USER_DEFINED_LAYOUT_HPP
 
 #include "command_id.hpp"
 #include "variables_manager.hpp"
@@ -151,4 +151,4 @@ public:
 #include "user_defined_layout.cpp"
 #endif //HAT_CORE_HEADERONLY_MODE
 
-#endif //_USER_DEFINED_LAYOUT_HPP
+#endif //USER_DEFINED_LAYOUT_HPP

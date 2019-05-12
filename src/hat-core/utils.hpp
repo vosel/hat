@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _UTILS_HPP
-#define _UTILS_HPP
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #include <string>
 #include <istream>
@@ -20,4 +20,4 @@ namespace core {
 #include "utils.cpp"
 #endif //HAT_CORE_HEADERONLY_MODE
 
-#endif //_UTILS_HPP
+#endif //UTILS_HPP

@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _CONFIGS_ABSTRACTION_LAYER_HPP
-#define _CONFIGS_ABSTRACTION_LAYER_HPP
+#ifndef CONFIGS_ABSTRACTION_LAYER_HPP
+#define CONFIGS_ABSTRACTION_LAYER_HPP
 
 #include "commands_data_extraction.hpp"
 #include "user_defined_layout.hpp"
@@ -29,4 +29,4 @@ public:
 #include "configs_abstraction_layer.cpp"
 #endif //HAT_CORE_HEADERONLY_MODE
 
-#endif //_CONFIGS_ABSTRACTION_LAYER_HPP
+#endif //CONFIGS_ABSTRACTION_LAYER_HPP

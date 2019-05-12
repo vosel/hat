@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _ABSTRACT_ENGINE_HPP
-#define _ABSTRACT_ENGINE_HPP
+#ifndef ABSTRACT_ENGINE_HPP
+#define ABSTRACT_ENGINE_HPP
 
 #include <string>
 
@@ -67,4 +67,4 @@ public:
 #include "abstract_engine.cpp"
 #endif //HAT_CORE_HEADERONLY_MODE
 
-#endif //_ABSTRACT_ENGINE_HPP
+#endif //ABSTRACT_ENGINE_HPP

@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _VARIABLES_MANAGER_HPP
-#define _VARIABLES_MANAGER_HPP
+#ifndef VARIABLES_MANAGER_HPP
+#define VARIABLES_MANAGER_HPP
 
 #include <string>
 #include <map>
@@ -160,4 +160,4 @@ public:
 #include "variables_manager.cpp"
 #endif //HAT_CORE_HEADERONLY_MODE
 
-#endif //_VARIABLES_MANAGER_HPP
+#endif //VARIABLES_MANAGER_HPP

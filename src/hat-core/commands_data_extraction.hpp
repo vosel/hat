@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _COMMANDS_DATA_EXTRACTION_HPP
-#define _COMMANDS_DATA_EXTRACTION_HPP
+#ifndef COMMANDS_DATA_EXTRACTION_HPP
+#define COMMANDS_DATA_EXTRACTION_HPP
 
 #include "command_id.hpp"
 #include "image_id.hpp"
@@ -358,4 +358,4 @@ public:
 #include "commands_data_extraction.cpp"
 #endif //HAT_CORE_HEADERONLY_MODE
 
-#endif //_COMMANDS_DATA_EXTRACTION_HPP
+#endif //COMMANDS_DATA_EXTRACTION_HPP

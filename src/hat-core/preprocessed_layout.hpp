@@ -3,8 +3,8 @@
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
 
-#ifndef _PREPROCESSED_LAYOUT_HPP
-#define _PREPROCESSED_LAYOUT_HPP
+#ifndef PREPROCESSED_LAYOUT_HPP
+#define PREPROCESSED_LAYOUT_HPP
 
 #include "command_id.hpp"
 #include "image_id.hpp"
@@ -112,4 +112,4 @@ public:
 #include "preprocessed_layout.cpp"
 #endif //HAT_CORE_HEADERONLY_MODE
 
-#endif //_PREPROCESSED_LAYOUT_HPP
+#endif //PREPROCESSED_LAYOUT_HPP
