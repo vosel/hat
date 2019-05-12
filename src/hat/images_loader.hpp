@@ -2,7 +2,8 @@
 // Copyright (c) 2019, Yuriy Vosel.
 // Licensed under Boost Software License.
 // See LICENSE.txt for the licence information.
-#pragma once
+#ifndef HAT_IMAGES_LOADER_HPP
+#define HAT_IMAGES_LOADER_HPP
 
 #include <tau/common/element_id.h>
 #include "../hat-core/image_id.hpp"
@@ -23,3 +24,4 @@ ImageBuffersList loadImages(ImageFilesRegionsList const & data, std::function<vo
 } // namespace hat
 
 #endif //HAT_IMAGES_SUPPORT
+#endif //HAT_IMAGES_LOADER_HPP
