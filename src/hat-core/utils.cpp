@@ -7,7 +7,9 @@
 #include "utils.hpp"
 #endif
 #include <sstream>
+#include <fstream>
 #include <iomanip>
+#include <cctype> //toupper
 #ifndef HAT_CORE_HEADERONLY_MODE
 #define LINKAGE_RESTRICTION 
 #else
@@ -91,6 +93,35 @@ LINKAGE_RESTRICTION std::string escapeRawUTF8_forJson(std::string const & string
 	}
 	auto toReturn = result.str();
 	return toReturn;
+}
+
+
+LINKAGE_RESTRICTION bool isSvgFile(std::string const & file_path)
+{
+	static const auto extension = ".svg";
+	static const auto extensionLen = strlen(extension);
+
+	if (file_path.size() < extensionLen) {
+		return false;
+	}
+	return std::equal(extension, extension + extensionLen, file_path.end() - extensionLen, 
+		[](char a, char b) {
+		return (std::toupper(a) == std::toupper(b));
+	});
+}
+
+LINKAGE_RESTRICTION std::string loadSvgFromFile(std::string const & file_path)
+{
+	std::ifstream filestream(file_path);
+	if (!filestream.is_open()) {
+		throw std::runtime_error("Could not open svg file: " + file_path);
+	}
+	std::stringstream result;
+	std::string line;
+	while (getLineFromFile(filestream, line)) {
+		result << line;
+	}
+	return result.str();
 }
 
 } //namespace core
