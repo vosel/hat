@@ -203,7 +203,7 @@ private:
 			// This will make the initial loading feel a little bit snappier.
 			m_should_reupload_images = false;
 			for (auto & imageInfo : m_loadedImagesForConfig) {
-				sendPacket_putImage(imageInfo.first, imageInfo.second);
+				sendPacket_putImage(imageInfo.first, *(imageInfo.second));
 			}
 		}
 #endif // HAT_IMAGES_SUPPORT

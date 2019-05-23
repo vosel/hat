@@ -4,7 +4,9 @@
 // See LICENSE.txt for the licence information.
 
 #include "images_loader.hpp"
+#include "../hat-core/utils.hpp"
 #include <tau/common/ARGB_image_resource.h>
+#include <tau/common/SVG_image_resource.h>
 
 #include <iostream>
 #include <algorithm>
@@ -22,7 +24,7 @@ namespace hat {
 namespace tool {
 
 template <typename BoostGilImageView>
-tau::common::ARGB_ImageResource simpleLoadImage(BoostGilImageView const & imageView, hat::core::ImagePhysicalInfo const & toLoad) {
+std::shared_ptr<tau::common::ImageResource> simpleLoadRasterImage(BoostGilImageView const & imageView, hat::core::ImagePhysicalInfo const & toLoad) {
 	auto const img_width = (size_t)imageView.width();
 	auto const img_height = (size_t)imageView.height();
 	//calculation of the actual crop region
@@ -42,7 +44,7 @@ tau::common::ARGB_ImageResource simpleLoadImage(BoostGilImageView const & imageV
 	auto const crop_height = ((img_height - crop_y) > toLoad.size.y) ? toLoad.size.y : (img_height - crop_y);
 
 	//crop the image appropriately, copy the data to the result:
-	tau::common::ARGB_ImageResource result{crop_width, crop_height};
+	std::shared_ptr<tau::common::ARGB_ImageResource> result = std::make_shared<tau::common::ARGB_ImageResource>(crop_width, crop_height);
 
 	//TODO: implement this copying properly (more ideomatic for boost::gil)
 	using boost::gil::view;
@@ -56,29 +58,37 @@ tau::common::ARGB_ImageResource simpleLoadImage(BoostGilImageView const & imageV
 			auto green = boost::gil::get_color(point, boost::gil::green_t());
 			auto blue = boost::gil::get_color(point, boost::gil::blue_t());
 
-			result.at(x, y) = tau::common::ARGB_point{255, red, green, blue};
+			result->at(x, y) = tau::common::ARGB_point{255, red, green, blue};
 		}
 	}
 	return result;
 }
 
 //All the objects in the input vector should point to the regions in the same file
-std::vector<tau::common::ARGB_ImageResource> loadImagesFromSameFile(std::string const & file_path,
+std::vector<std::shared_ptr<tau::common::ImageResource>> loadImagesFromSameFile(std::string const & file_path,
 					std::vector<hat::core::ImagePhysicalInfo> const & toLoad) {
-	auto result = std::vector<tau::common::ARGB_ImageResource> {};
+	auto result = std::vector<std::shared_ptr<tau::common::ImageResource>> {};
 	result.reserve(toLoad.size());
-	if (toLoad.size() > 0) {
-		auto imageBuffer = boost::gil::rgb8_image_t{};
-		try {
-			boost::gil::png_read_and_convert_image(file_path, imageBuffer);
-		} catch (std::ios_base::failure & exception) {
-			std::cout << exception.what() << "\n";
-			throw std::runtime_error("Could not read one of the images.");
-		}
 
-		for (auto & single_crop: toLoad) {
-			if (single_crop.filepath == file_path) {
-				result.push_back(simpleLoadImage(boost::gil::view(imageBuffer), single_crop));
+	if (toLoad.size() > 0) {
+		if (hat::core::isSvgFile(file_path)) {
+			auto loadedData = std::make_shared<tau::common::SVG_ImageResource>(hat::core::loadSvgFromFile(file_path));
+			for (auto & single_crop: toLoad) {
+				result.push_back(loadedData); // There could be several svg image objects, which refer to the same physical svg file
+			}
+		} else { //The default behaviour is assuming that we are dealing with a png file:
+			auto imageBuffer = boost::gil::rgb8_image_t{};
+			try {
+				boost::gil::png_read_and_convert_image(file_path, imageBuffer);
+			} catch (std::ios_base::failure & exception) {
+				std::cout << exception.what() << "\n";
+				throw std::runtime_error("Could not read one of the images.");
+			}
+
+			for (auto & single_crop: toLoad) {
+				if (single_crop.filepath == file_path) {
+					result.push_back(simpleLoadRasterImage(boost::gil::view(imageBuffer), single_crop));
+				}
 			}
 		}
 	}
@@ -88,7 +98,7 @@ std::vector<tau::common::ARGB_ImageResource> loadImagesFromSameFile(std::string 
 ImageBuffersList loadImages(
 	ImageFilesRegionsList const & data, std::function<void(std::string const &)> loadingLogger)
 {
-	std::vector<std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>> result;
+	std::vector<std::pair<tau::common::ImageID, std::shared_ptr<tau::common::ImageResource>>> result;
 	result.reserve(data.size());
 
 	typedef std::vector<hat::core::ImageID> CacheOfImgIDs;
@@ -108,9 +118,9 @@ ImageBuffersList loadImages(
 
 		// Package the results into output vector:
 		std::transform(imageIDs.begin(), imageIDs.end(), load_result.begin(), std::back_inserter(result),
-			[](hat::core::ImageID const & imgID, tau::common::ARGB_ImageResource const & image) {
+			[](hat::core::ImageID const & imgID, std::shared_ptr<tau::common::ImageResource> const & image) {
 				//TODO: we should store the image resources inside shared_ptr, so that we don't have to excessively copy it around.
-				return std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource> {
+				return std::pair<tau::common::ImageID,  std::shared_ptr<tau::common::ImageResource>> {
 					tau::common::ImageID{imgID.getValue()}, image
 				};
 			});

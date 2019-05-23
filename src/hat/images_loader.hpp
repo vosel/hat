@@ -11,13 +11,14 @@
 #include <string>
 #include <tau/common/ARGB_image_resource.h>
 #include <functional>
+#include <memory>
 
 #ifdef HAT_IMAGES_SUPPORT
 namespace hat {
 namespace tool {
 
 typedef std::vector<std::pair<hat::core::ImageID, hat::core::ImagePhysicalInfo>> ImageFilesRegionsList;
-typedef std::vector<std::pair<tau::common::ImageID, tau::common::ARGB_ImageResource>> ImageBuffersList;
+typedef std::vector<std::pair<tau::common::ImageID, std::shared_ptr<tau::common::ImageResource>>> ImageBuffersList;
 
 ImageBuffersList loadImages(ImageFilesRegionsList const & data, std::function<void(std::string const &)> loadingLogger);
 } // namespace tool
