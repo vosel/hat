@@ -202,7 +202,7 @@ private:
 				auto imagesToLoad = temporaryEngineObject->getImagesPhysicalInfos();
 				m_loadedImagesForConfig = loadImages(imagesToLoad, add_line_to_client_onscreen_log);
 				std::stringstream message;
-				message << " ... done (" << m_loadedImagesForConfig.size() << " bitmaps extracted)";
+				message << " ... done (" << m_loadedImagesForConfig.size() << " images extracted)";
 				add_line_to_client_onscreen_log(message.str(), "");
 			} catch (std::runtime_error & e) {
 				std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
