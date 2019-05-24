@@ -20,7 +20,7 @@ namespace tool {
 typedef std::vector<std::pair<hat::core::ImageID, hat::core::ImagePhysicalInfo>> ImageFilesRegionsList;
 typedef std::vector<std::pair<tau::common::ImageID, std::shared_ptr<tau::common::ImageResource>>> ImageBuffersList;
 
-ImageBuffersList loadImages(ImageFilesRegionsList const & data, std::function<void(std::string const &)> loadingLogger);
+ImageBuffersList loadImages(ImageFilesRegionsList const & data, std::function<void(std::string const &, std::string const &)> loadingLogger);
 } // namespace tool
 } // namespace hat
 

@@ -13,6 +13,7 @@
 #include <set>
 #include <iostream>
 #include <memory>
+#include <deque>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -134,17 +135,48 @@ private:
 		auto temporaryEngineObject = std::unique_ptr<Engine>{};
 		try {
 			auto loadingLayoutInfo = Engine::getLayoutJson_loadingConfigsSplashscreen();
-			sendPacket_resetLayout(loadingLayoutInfo.second);
-			std::string loadingDynamicMessage = "load log:";
-			auto refresh_loading_log = [&loadingLayoutInfo, this](std::string const & newMessage) {
-				sendPacket_changeElementNote(loadingLayoutInfo.first, newMessage);
+			sendPacket_resetLayout(loadingLayoutInfo.layoutJson);
+			std::string mainLoadingLogText = "load log:";
+			auto particularFilesLogTail = std::deque<std::string>{};
+
+			auto refresh_main_loading_log = [&loadingLayoutInfo, this](std::string const & newMessage) {
+				sendPacket_changeElementNote(loadingLayoutInfo.generalLoadingStepsLogLabel, newMessage);
 			};
-			auto add_line_to_client_onscreen_log = [&loadingDynamicMessage, &refresh_loading_log](std::string const & lineToAppendToLog)
+			auto refresh_particular_files_log = [&loadingLayoutInfo, this](std::string const & newMessage) {
+				sendPacket_changeElementNote(loadingLayoutInfo.particularFilesLogLabel, newMessage);
+			};
+
+			auto add_line_to_client_onscreen_log = [&mainLoadingLogText, &refresh_main_loading_log, &refresh_particular_files_log, &particularFilesLogTail](std::string const & newStepMessage, std::string const & particularFileReadingStartedMessage)
 			{
-				loadingDynamicMessage = loadingDynamicMessage + ("\\n" + lineToAppendToLog);
-				refresh_loading_log(loadingDynamicMessage);
+				if (newStepMessage.size() > 0) { // record the new step in the log. 
+					mainLoadingLogText = mainLoadingLogText + ("\\n" + newStepMessage);
+					refresh_main_loading_log(mainLoadingLogText);
+				}
+				static const int completedFilesCountToDisplay{ 5 };
+				bool const newFileIsBeingLoaded{particularFileReadingStartedMessage.size() > 0};
+				if (newFileIsBeingLoaded) {
+					while (particularFilesLogTail.size() >= completedFilesCountToDisplay) {
+						particularFilesLogTail.pop_front();
+					}
+				}
+
+				// Building the string to be displayed in the files reading list (tail of the list is displayed there)
+				std::stringstream toPrint;
+				for (auto & alreadyProcessedFile : particularFilesLogTail) {
+					toPrint << "[done]   " << alreadyProcessedFile << "\\n";
+				}
+
+				if (newFileIsBeingLoaded) {
+					while (particularFilesLogTail.size() >= completedFilesCountToDisplay) {
+						particularFilesLogTail.pop_front();
+					}
+					toPrint << "[reading...]" <<  particularFileReadingStartedMessage;
+					particularFilesLogTail.push_back(particularFileReadingStartedMessage);
+				}
+				refresh_particular_files_log(toPrint.str());
+
 			};
-			refresh_loading_log(loadingDynamicMessage);
+			refresh_main_loading_log(mainLoadingLogText);
 
 			try {
 				temporaryEngineObject = std::make_unique<Engine>(Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, add_line_to_client_onscreen_log));
@@ -155,30 +187,30 @@ private:
 			} catch (std::runtime_error & e) {
 				std::cerr << "\n --- Error during reading of the config files:\n" << e.what() << "\n";
 
-				add_line_to_client_onscreen_log("!!!");
-				add_line_to_client_onscreen_log("!!!");
-				add_line_to_client_onscreen_log("!!!");
-				add_line_to_client_onscreen_log("Error during loading config files. The layout will be restored to previous state in 10 seconds!");
+				add_line_to_client_onscreen_log("!!!", "");
+				add_line_to_client_onscreen_log("!!!", "");
+				add_line_to_client_onscreen_log("!!!", "");
+				add_line_to_client_onscreen_log("Error during loading config files. The layout will be restored to previous state in 10 seconds!", "");
 				Engine::sleep(10000u);
 				throw;
 		}
 #ifdef HAT_IMAGES_SUPPORT
 			// loading images:
-			add_line_to_client_onscreen_log("Starting to load images...");
+			add_line_to_client_onscreen_log("Starting to load images...", "");
 			try {
 				m_loadedImagesForConfig.clear();
 				auto imagesToLoad = temporaryEngineObject->getImagesPhysicalInfos();
 				m_loadedImagesForConfig = loadImages(imagesToLoad, add_line_to_client_onscreen_log);
 				std::stringstream message;
 				message << " ... done (" << m_loadedImagesForConfig.size() << " bitmaps extracted)";
-				add_line_to_client_onscreen_log(message.str());
+				add_line_to_client_onscreen_log(message.str(), "");
 			} catch (std::runtime_error & e) {
 				std::cerr << "\n --- Error during loading data from one of the images:\n" << e.what() << "\n";
 
-				add_line_to_client_onscreen_log("!!!");
-				add_line_to_client_onscreen_log("!!!");
-				add_line_to_client_onscreen_log("!!!");
-				add_line_to_client_onscreen_log("Error during loading the images. The layout will be restored to previous state in 10 seconds!");
+				add_line_to_client_onscreen_log("!!!", "");
+				add_line_to_client_onscreen_log("!!!", "");
+				add_line_to_client_onscreen_log("!!!", "");
+				add_line_to_client_onscreen_log("Error during loading the images. The layout will be restored to previous state in 10 seconds!", "");
 				Engine::sleep(10000u);
 				throw;
 			}
@@ -216,7 +248,7 @@ bool checkConfigsForErrors() {
 
 	try {
 		std::cout << "Checking configuration files for errors ...\n";
-		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, [](std::string const &){});
+		Engine::create(COMMANDS_CONFIG_PATH, INPUT_SEQUENCES_CFG_PATHS, VARIABLE_MANAGERS_CFG_PATHS, IMAGE_RESOURCES_CONFIG_PATH, COMMAND_ID_TO_IMAGE_ID_CONFIG_PATH, LAYOUT_CONFIG_PATH, STICK_ENV_TO_WINDOW, KEYSTROKES_DELAY, [](std::string const &, std::string const &){});
 		std::cout << "\t... done.\n";
 	} catch (std::runtime_error & e) {
 		std::cerr << "\n --- Error during reading of the config files at startup:\n" << e.what() << "\n";

@@ -96,7 +96,7 @@ std::vector<std::shared_ptr<tau::common::ImageResource>> loadImagesFromSameFile(
 }
 
 ImageBuffersList loadImages(
-	ImageFilesRegionsList const & data, std::function<void(std::string const &)> loadingLogger)
+	ImageFilesRegionsList const & data, std::function<void(std::string const &, std::string const &)> loadingLogger)
 {
 	std::vector<std::pair<tau::common::ImageID, std::shared_ptr<tau::common::ImageResource>>> result;
 	result.reserve(data.size());
@@ -111,8 +111,8 @@ ImageBuffersList loadImages(
 
 	for (auto & allImagesForSameFile: sorted_data) {
 		std::stringstream message;
-		message << "Reading image file [" << allImagesForSameFile.second.second.size() << " regions should be extracted]:" << allImagesForSameFile.first;
-		loadingLogger(message.str());
+		message << "Image file: " << allImagesForSameFile.first << " [" << allImagesForSameFile.second.second.size() << " regions should be extracted]";
+		loadingLogger("", message.str());
 		auto load_result = loadImagesFromSameFile(allImagesForSameFile.first, allImagesForSameFile.second.second);
 		auto & imageIDs = allImagesForSameFile.second.first;
 

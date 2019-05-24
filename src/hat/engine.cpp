@@ -198,14 +198,14 @@ extern bool SHOULD_USE_SCANCODES;
 			return std::pair<bool, int> {is_verticalScroll, shouldFlipNumericValue ? -scrollAmount : scrollAmount};
 		}
 	}
-	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals, std::function<void(std::string const &)> loggingCallback)
+	Engine Engine::create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals, std::function<void(std::string const &, std::string const &)> loggingCallback)
 	{
 		std::fstream csvStream(commandsCSV.c_str());
 		if (!csvStream.is_open()) {
 			throw std::runtime_error("Could not find or open the commands config file: " + commandsCSV);
 		}
 
-		loggingCallback("Reading " + commandsCSV);
+		loggingCallback("Reading main commands list", commandsCSV);
 		class MyHotkeyCombination: public core::SimpleHotkeyCombination
 		{
 			ROBOT_NS::KeyList m_sequence;
@@ -366,11 +366,12 @@ extern bool SHOULD_USE_SCANCODES;
 			return std::make_shared<MySleepOperation>(param, sleepTimeout, true);
 		};
 
+		loggingCallback("Reading input sequences configs", "");
 		for (auto & inputSequencesConfig: inputSequencesConfigs) {
 			if (inputSequencesConfig.size() > 0) {
 				std::cout << "Starting to read input sequences file '" << inputSequencesConfig << "'\n";
 				std::fstream typingsSequensesConfigStream(inputSequencesConfig.c_str());
-				loggingCallback("Reading " + inputSequencesConfig);
+				loggingCallback("", inputSequencesConfig);
 				if (typingsSequensesConfigStream.is_open()) {
 					commandsConfig.consumeInputSequencesConfigFile(typingsSequensesConfigStream, lambdaForKeyboardInputObjectsCreation, lambdaForMouseInputObjectsCreation, lambdaForSleepObjectsCreation);
 				} else {
@@ -378,12 +379,12 @@ extern bool SHOULD_USE_SCANCODES;
 				}
 			}
 		}
-
+		loggingCallback("Reading variables managers configs", "");
 		for (auto & variablesManagersConfig: variablesManagersSetupConfigs) { // TODO: [low priority] refactoring: get rid of the code duplication (see loop above)
 			if (variablesManagersConfig.size() > 0) {
 				std::cout << "Starting to read varaibles managers config file '" << variablesManagersConfig << "'\n";
 				std::fstream filestream(variablesManagersConfig.c_str()); 
-				loggingCallback("Reading " + variablesManagersConfig);
+				loggingCallback("", variablesManagersConfig);
 				if (filestream.is_open()) {
 					commandsConfig.consumeVariablesManagersConfig(filestream);
 				} else {
@@ -401,9 +402,9 @@ extern bool SHOULD_USE_SCANCODES;
 			if (img_resources_fstream.is_open()) {
 				std::fstream img_2_commands_fstream(imageId2CommandIdConfig.c_str());
 				if (img_2_commands_fstream.is_open()) {
-					loggingCallback("Reading images info configs:");
-					loggingCallback("resources info: " + imageResourcesConfig);
-					loggingCallback("imageIds 2 commands mappings: " + imageId2CommandIdConfig);
+					loggingCallback("Reading images info configs...", "");
+					loggingCallback("", "resources info: " + imageResourcesConfig);
+					loggingCallback("", "imageIds 2 commands mappings: " + imageId2CommandIdConfig);
 					imageResourcesDataAccumulator.consumeImageResourcesConfig(img_resources_fstream, img_2_commands_fstream);
 				} else {
 					std::cout << "  ERROR: file '" << imageId2CommandIdConfig << "'could not be opened. Please check the path. Images info will not be loaded.\n";
@@ -458,21 +459,27 @@ extern bool SHOULD_USE_SCANCODES;
 	}
 
 namespace {
-	std::string generateLoadingLayoutJson(tau::common::LayoutPageID const & pageID, tau::common::ElementID const & logLabel) {
+	std::string generateLoadingLayoutJson(tau::common::LayoutPageID const & pageID, tau::common::ElementID const & generalLogLabel, tau::common::ElementID const & particularFilesLogLabel) {
 		namespace lg = tau::layout_generation;
 		auto topElem = lg::UnevenlySplitElementsPair{
-			lg::LabelElement("Loading configs...\\nPlease wait."), lg::LabelElement("...").ID(logLabel), true, 0.15};
+			lg::LabelElement("Loading configs...\\nPlease wait."), 
+			lg::UnevenlySplitElementsPair{
+				lg::LabelElement("...").ID(generalLogLabel),
+				lg::LabelElement("...").ID(particularFilesLogLabel),
+				true, 0.4},
+			true, 0.15};
 		auto resultLayout = lg::LayoutInfo{};
 		resultLayout.pushLayoutPage(lg::LayoutPage(pageID, topElem));
 		return resultLayout.getJson();
 	}
 }
 
-	Engine::LoadingLayoutDataContainer const & Engine::getLayoutJson_loadingConfigsSplashscreen()
+	LoadingLayoutDataContainer const & Engine::getLayoutJson_loadingConfigsSplashscreen()
 	{
-		static auto LOG_ID = tau::common::ElementID{generateTrowawayTauIdentifier()};
+		static auto GENERAL_LOG_ID = tau::common::ElementID{generateTrowawayTauIdentifier()};
+		static auto PARTICULAR_FILES_LOG_ID = tau::common::ElementID{generateTrowawayTauIdentifier()};
 		static LoadingLayoutDataContainer result = LoadingLayoutDataContainer(
-			LOG_ID, generateLoadingLayoutJson(tau::common::LayoutPageID(generateTrowawayTauIdentifier()), LOG_ID));
+			GENERAL_LOG_ID, PARTICULAR_FILES_LOG_ID, generateLoadingLayoutJson(tau::common::LayoutPageID(generateTrowawayTauIdentifier()), GENERAL_LOG_ID, PARTICULAR_FILES_LOG_ID));
 		return result;
 	}
 	

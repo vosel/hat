@@ -17,6 +17,16 @@
 namespace hat {
 namespace tool {
 //TODO: refactor this class implementation
+
+struct LoadingLayoutDataContainer {
+	tau::common::ElementID generalLoadingStepsLogLabel;
+	tau::common::ElementID particularFilesLogLabel;
+	std::string layoutJson;
+	LoadingLayoutDataContainer(tau::common::ElementID const & generalStepsLabel, tau::common::ElementID const & particularFilesLabel, std::string const & layoutJson)
+		: generalLoadingStepsLogLabel(generalStepsLabel), particularFilesLogLabel(particularFilesLabel), layoutJson(layoutJson)
+	{}
+};
+
 class Engine : public hat::core::AbstractEngine
 {
 	enum class LayoutState
@@ -75,9 +85,8 @@ public:
 	hat::core::ImageResourcesInfosContainer::ImagesInfoList getImagesPhysicalInfos() const;
 	
 	static bool canStickToWindows();
-	static Engine create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals, std::function<void(std::string const &)> loggingCallback);
+	static Engine create(std::string const & commandsCSV, std::vector<std::string> const & inputSequencesConfigs, std::vector<std::string> const & variablesManagersSetupConfigs, std::string const & imageResourcesConfig, std::string const & imageId2CommandIdConfig, std::string const & layoutConfig, bool stickEnvToWindow, unsigned int keyboard_intervals, std::function<void(std::string const &, std::string const &)> loggingCallback);
 	
-	typedef std::pair<tau::common::ElementID, std::string> LoadingLayoutDataContainer;
 	static LoadingLayoutDataContainer const & getLayoutJson_loadingConfigsSplashscreen();
 	//Platform-independent sleep operation
 	static void sleep(unsigned int millisec);
